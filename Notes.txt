@@ -1,0 +1,41 @@
+This is the SpectrumProfiler project.
+It has several goals:
+*-Use a single channel SDR through SoapySdr
+*-perform RF sweeps
+*-generate FFT data
+*-allow the user to zoom in both in time and frequency space
+-detect energy
+-detect signals from energy
+-allow user to save list of detect signals
+
+
+Focus on speed and ability to scan huge amounts of spectrum
+Cache to disk?
+Cache to memory?
+
+*Radio Settings form/page
+*    Select radio
+*    show radio properties
+        gains
+        antennae
+        freq min/max
+        sample rate min/max
+
+*Radio control widget
+*    Set antennae
+*    Set Gain (RF/LNA/etc)
+*    Set/Get Bandwidth
+
+Sweep Settings
+    % overlap
+
+*Trace Settings
+*    Show Max Checkbox
+*    Clear Max
+*    FFT Averaging up/down
+
+Display settings:
+    Auto Min/Max finder (FFT / Waterfall)
+    Manual Min/Max level set (FFT / Waterfall)
+
+Tracer
