@@ -46,8 +46,8 @@ public:
     float *MaxValues(); // return the high-water marks
 
     // Set and get the number of rows to average
-    void SetAverageLength(int avg_rows){m_avgrows = avg_rows;}
-    int GetAverageLength(){return m_avgrows;}
+    void SetAverageLength(int avg_rows){m_avg_rows = avg_rows;}
+    int GetAverageLength(){return m_avg_rows;}
 
     int NumRows(); // current number of rows of data entered
     int MaxRows(); // returns the maxinum number of rows in this plot
@@ -77,13 +77,12 @@ public:
 
     void Lock(){m_mutex.lock();}
     void Unlock(){m_mutex.unlock();}
-    void CalcAvg(float *linedat);
     void CalcAvgEMA(float *linedat);
 
     float m_avg_min; // valid until the freq / span changes
     float m_avg_max; // valid until the freq / span changes
     int m_numrows;// number of rows entered in the m_alldat table
-    int m_avgrows; // how many rows to average
+    int m_avg_rows; // how many rows to average
 
     float m_emva_alpha; // exponential moving average alpha value (0 - 1)
     void SetAlpha(float val){m_emva_alpha = val;}

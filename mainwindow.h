@@ -57,7 +57,7 @@ private slots:
     void on_chkAGC_clicked();
     void on_sldBins_valueChanged(int value);
     void on_spnFreqLow_valueChanged(double arg1);
-    void on_spnFreqHigh_valueChanged(double arg1);
+    void on_spnFreqHigh_valueChanged(double arg1);    
 };
 
 #endif // MAINWINDOW_H

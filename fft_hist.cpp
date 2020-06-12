@@ -8,7 +8,6 @@
 
 using namespace std;
 
-//float lastts = 0;
 #define NOISE_FLOOR -145.0f
 float FFT_UPDATE_RATE =  DEFAULT_FFT_UPDATE_RATE; // in hz
 float TIME_RESOLUTION = 1000000.0;
@@ -41,7 +40,6 @@ FFT_Hist::FFT_Hist()
 {   
     m_alldat = nullptr;
     m_avg = nullptr;
-    //m_cachedat = nullptr;
     m_maxvalues = nullptr;
     m_numrows = 0;
     m_binsize = 0;
@@ -51,7 +49,7 @@ FFT_Hist::FFT_Hist()
     m_BWHz = 0;
     m_emva_alpha = .8;//
 
-    m_avgrows = DEFAULT_AVG_LEN;
+    m_avg_rows = DEFAULT_AVG_LEN;
     Reset(MAX_FFT_SIZE);
     m_binsize = DEFAULT_BIN_SIZE;
 }
@@ -69,10 +67,10 @@ void FFT_Hist::Reset(int binsize)
     //allocate memory
     m_maxvalues = new float[(unsigned)m_binsize]; // max values is a single row
     m_alldat = new float[(unsigned)m_binsize * MAX_FFT_ROWS];
-    m_avg = new float[(unsigned)m_binsize* MAX_FFT_ROWS]; // another map of the averaged data
-    //m_cachedat = new float[(unsigned)m_binsize* MAX_FFT_ROWS]; // another map of the cached data
+    m_avg = new float[(unsigned)m_binsize];//* MAX_FFT_ROWS]; //
     m_numrows = 0;
     ClearMaxValues();
+    for(int c = 0; c < binsize ; c++) m_avg[c] = NOISE_FLOOR;
 }
 
 void FFT_Hist::Release() // release allocated memory
@@ -153,9 +151,6 @@ void FFT_Hist::Set(float centerfreq,float BWHz)
     m_BWHz  = BWHz;
 }
 
-
-
-// I gues I'm not really adding data as single lines here anymore, I think we're simply blitting lines into the cache
 void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
 {
     Lock();
@@ -187,6 +182,10 @@ void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
     src = (unsigned char *)m_alldat; // the source is the begining of the all data block
     dst = src + rowsz;
     memmove(dst,src,szmv);    
+
+    CalcAvgEMA(fft);
+    CalcMax(fft); // look for the high-water marks
+
     memcpy(m_alldat,fft,m_binsize * sizeof(float));//copy the new data to the first row
 
     m_numrows ++; //
@@ -195,20 +194,15 @@ void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
         m_numrows = MAX_FFT_ROWS; // limit the max number of rows
     }
 
+
+/*
     //alright, now copy the average table down
     src = (unsigned char *)m_avg; // the source is the begining of the average block
     dst = src + rowsz; // the destination is the next row down
     memmove(dst,src,szmv); // move the block down one row
     // now, calculate the new average fft row from the last X samples
-    CalcAvg(fft);
-    //CalcAvgEMA(fft);
-
-    //wait to calculate the max values
-    if(m_numrows >= m_avgrows)
-    {
-        CalcMax(fft); // look for the high-water marks
-    }
-
+    //CalcAvg(fft);
+*/
     Unlock();
 }
 
@@ -242,62 +236,7 @@ This function calculates a single line (the latest) of average data
 based on the last m_avgrows rows
 */
 
-void FFT_Hist::CalcAvg(float *linedat)
-{
-    int navrows = m_avgrows; // the number of rows to average
-/*
-    if(m_numrows < navrows )
-    {
-        navrows = m_numrows;
-    }
-*/
-    //ok, a special case here.
-    // if the m_avgrows is 1, there is really no averaging going on, just a copy
 
-    float *srcdat = m_alldat;//linedat;
-
-    if(navrows == 1)
-    {
-        // copy the single row to the average data
-        memcpy(m_avg,srcdat,(unsigned) m_binsize * sizeof(float));
-        /*
-        //still have to calculate the min max averages
-        for(int x = 0; x < m_binsize;x++)
-        {
-            if(m_avg[x] < m_avg_min) m_avg_min = m_avg[x];
-            if(m_avg[x] > m_avg_max) m_avg_max = m_avg[x];
-        }
-        */
-        return; //and exit early
-    }
-
-    // iterate over the x column from 0 to bin size
-    for(int x = 0; x < m_binsize;x++)
-    {
-        m_avg[x] = 0.0; //initialize the value to 0
-        for(int y=0; y < navrows ; y ++ )
-        {
-            if(x ==0 && y==0)
-            {
-                m_avg_min = srcdat[0];
-                m_avg_max = srcdat[0];
-            }
-            //should convert from log to linear here first...
-            if(y==0)
-            {
-                m_avg[x] = (float)Pow2Mw(srcdat[(y * m_binsize) + x]); // set the data
-            }
-            else
-            {
-                m_avg[x] += (float)Pow2Mw(srcdat[(y * m_binsize) + x]); // add the data
-            }
-        }
-        m_avg[x] /= (float)navrows; // calculate the average of the mw power
-        m_avg[x] = Mw2Pow(m_avg[x]);
-        if(m_avg[x] < m_avg_min) m_avg_min = m_avg[x];
-        if(m_avg[x] > m_avg_max) m_avg_max = m_avg[x];
-    }
-}
 /*
 need a new function to calculate the exponential moving average
 https://stackoverflow.com/questions/10990618/calculate-rolling-moving-average-in-c
@@ -307,22 +246,25 @@ You just need to find a value of "alpha" where the effect of a given sample only
 */
 void FFT_Hist::CalcAvgEMA(float *linedat)
 {
-    int navrows = m_avgrows; // the number of rows to average
+    /*
+    int navrows = m_avg_rows; // the number of rows to average
     if(m_numrows < navrows )
     {
         navrows = m_numrows;
     }
 
-    float *lastavg = &m_avg[m_binsize]; //last line of average values
+    //float *lastavg = &m_avg[m_binsize]; //last line of average values
     // iterate over the x column from 0 to bin size
     if(navrows == 1)
     {
         memcpy(m_avg,linedat,(unsigned) m_binsize * sizeof(float));
     }
-
+*/
     for(int x = 0; x < m_binsize;x++)
     {
-        m_avg[x] = ((m_emva_alpha + fabs(linedat[x])) + (1.0 - m_emva_alpha) * fabs(lastavg[x])) * -1.0; //initialize the value to 0
+        //accumulator = (alpha * new_value) + (1.0 - alpha) * accumulator
+        m_avg[x] = ((m_emva_alpha * linedat[x]) + (1.0 - m_emva_alpha) * m_avg[x]); //initialize the value to 0
+
         if(x ==0 )
         {
             m_avg_min = m_avg[x];

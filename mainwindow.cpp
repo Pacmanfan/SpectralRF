@@ -115,6 +115,7 @@ void MainWindow::SetupGUIforRadio()
 
 void MainWindow::onViewTimer()
 {
+
     if(m_sweeper->IsSweeping() == false)
         return;
     //update the waterfall / fft views
@@ -123,11 +124,21 @@ void MainWindow::onViewTimer()
 
     plotFFT->UpdateFFT(m_sweeper->m_ffthist);
     plotFFT->plot->replot();
+
 }
 
 void MainWindow::onSweepLineCompleted()
 {
+    /*
+    if(m_sweeper->IsSweeping() == false)
+        return;
+    //update the waterfall / fft views
+    plotWaterfall->Update(m_sweeper->m_ffthist,0,256);
+    plotWaterfall->plot->replot();
 
+    plotFFT->UpdateFFT(m_sweeper->m_ffthist);
+    plotFFT->plot->replot();
+    */
 }
 
 void MainWindow::onActionRadioMenu()
@@ -181,6 +192,11 @@ void MainWindow::on_cmdStartStop_clicked()
 {
     if(m_sweeper->IsSweeping()==false)
     {
+        if(ui->spnFreqLow->value() > ui->spnFreqHigh->value())
+        {
+            QMessageBox::information(this,"Frequency mismatch","Low frequency is greater than high frequency.");
+            return;
+        }
         //validate to see if low > high (todo)
         double oneM = 1000000;
         float bw = (ui->spnFreqHigh->value() - ui->spnFreqLow->value())/2.0;
@@ -247,10 +263,9 @@ void MainWindow::on_cmdClearMax_clicked()
 
 void MainWindow::on_sldAverage_valueChanged(int value)
 {
-    m_sweeper->m_ffthist->SetAverageLength(value);
-   // double v = value;
-    //v /= 100.0;
-   // m_sweeper->m_ffthist->SetAlpha(v);
+    double val = value;
+    val /= 1000;
+    m_sweeper->m_ffthist->SetAlpha(val);
 }
 
 void MainWindow::on_cmbGain_currentIndexChanged(int index)
@@ -291,7 +306,7 @@ void MainWindow::on_sldBins_valueChanged(int value)
     SDR_Device * dev = m_sweeper->m_radio;
     if(!dev)
         return;
-    double rbw = dev->m_BW / (double)numbins;
+    double rbw = dev->m_BW_Hz / (double)numbins;
 
     ui->lblBins->setText("Bins / FFT: " + QString::number(numbins));
     ui->lblRBW->setText("Res. BW: " + QString::number(rbw,'f',2) + " Hz");
@@ -310,3 +325,4 @@ void MainWindow::on_spnFreqHigh_valueChanged(double arg1)
 {
     on_sldBins_valueChanged(ui->sldBins->value());
 }
+

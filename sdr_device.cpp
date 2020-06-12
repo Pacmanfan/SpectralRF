@@ -44,7 +44,7 @@ bool SDR_Device::InitSDR(SoapySDR::Kwargs &args)
     }
 
     sdr->setSampleRate( SOAPY_SDR_RX, 0, m_rate_limit_high);// set to max bw
-    m_BW = m_rate_limit_high;
+    m_BW_Hz = m_rate_limit_high;
 
     sdr->setFrequency( SOAPY_SDR_RX, 0, 433e6);
     // 4. setup a stream (complex floats)

@@ -24,7 +24,7 @@ public:
     void CloseSDR();
     double m_freq_limit_low, m_freq_limit_high; // the min/max freqs this radio is capable of.
     double m_rate_limit_low, m_rate_limit_high; // upper and lower ranges of the sample rate that the SDR is capable of.
-    double m_BW; // the bandwidth / sps rate the radio is currently set at (usually max)
+    double m_BW_Hz; // the bandwidth / sps rate the radio is currently set at (usually max)
 };
 
 #endif // SDR_DEVICE_H

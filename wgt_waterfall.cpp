@@ -201,14 +201,6 @@ void wgt_waterfall::Update(FFT_Hist *pFFTHelp, double tlow, double thigh)
     colorMap->data()->SetDataBounds(lower,upper);
     colorMap->setDataRange(QCPRange(lower,upper));
 
-    // rescale the key (x) and value (y) axes so the whole color map is visible:
-
-    if (bFirstTimeThrough)
-    {
-    //    plot->rescaleAxes();
-
-    }
-    bFirstTimeThrough=false;
 }
 
 void wgt_waterfall::AddTuner(ftmarker *tunermarker)

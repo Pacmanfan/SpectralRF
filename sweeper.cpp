@@ -32,6 +32,7 @@ void Sweeper::StartSweep(double flow,double fhigh, int nBinsPerFFT, int overlapp
 void Sweeper::StopSweep()
 {
     m_sweeping = false;
+    pthread_join(rst,0);
 }
 
 void Sweeper::Sweep()
@@ -47,8 +48,8 @@ void Sweeper::Sweep()
 
     double sweep_bw = freq_high - freq_low; // the entire bw that we're sweeping
     double sweep_cf = freq_low + (sweep_bw / 2.0); // the center frequency of the bandwidth we're sweepinh
-    double fstart = freq_low + (m_radio->m_BW / 2.0); // the start frequency
-    double rbw = m_radio->m_BW / m_nBinsPerFFT; //resolution bandwidth
+    double fstart = freq_low + (m_radio->m_BW_Hz / 2.0); // the start frequency
+    double rbw = m_radio->m_BW_Hz / m_nBinsPerFFT; //resolution bandwidth
     int totalsweepbins = (int)(sweep_bw / rbw); // total number of bins we've pre-allocated
     double fcurrent = 0.0,fold = 0.0; // current and last frequency
     double fcurlow,fcurhigh;
@@ -66,29 +67,21 @@ void Sweeper::Sweep()
     while(m_sweeping)
     {
         //calculate the current low freq
-        fcurlow = fcurrent - (m_radio->m_BW / 2.0);
-
+        fcurlow = fcurrent - (m_radio->m_BW_Hz / 2.0);
         if(fold != fcurrent) // check to see if frequency is changing
         {
-            m_radio->sdr->setFrequency(SOAPY_SDR_RX, 0,fcurrent);//move to the new center frequency
-            //wait a certain 'settle time' and continue eating samples
-            EatSamples();
-        }else
-        {
-            // no change in frequency - probably because scan bw fits in radio bw
+            m_radio->sdr->setFrequency(SOAPY_SDR_RX, 0,fcurrent);//move to the new center frequency            
+            EatSamples(); //wait a certain 'settle time' and continue eating samples
         }
 
         fold = fcurrent; //save the old freq
-        //get the IQ data
 
-        ret = m_radio->sdr->readStream( m_radio->rx_stream, buffs, curnumbins, flags, time_ns);
-        //calculate the FFT for this segment
+        ret = m_radio->sdr->readStream( m_radio->rx_stream, buffs, curnumbins, flags, time_ns);//get the IQ data
+
         if(ret < 0)
-        {
-            //printf("Read return = %d\r\n",ret);
             continue;
-        }
 
+        //calculate the FFT for this segment
        // int idx = (int)((fcurlow - freq_low )/ rbw); // calculate the bin offset
 
         sweepline->m_timestamp = time_ns;
@@ -98,33 +91,29 @@ void Sweeper::Sweep()
             int hf = (curnumbins >> 1); // find the center bin
             sweepline->m_data[hf + idx] = ( sweepline->m_data[hf + idx - 1] + sweepline->m_data[hf + idx + 1])*.5;
         }
-
         idx += curnumbins;
-
         //increment the frequency
-        double nextfreq = fcurrent + m_radio->m_BW;
+        double nextfreq = fcurrent + m_radio->m_BW_Hz;
         //now, some checks
-        fcurlow = nextfreq - (m_radio->m_BW / 2.0);
-        fcurhigh = nextfreq + (m_radio->m_BW / 2.0);
+        fcurlow = nextfreq - (m_radio->m_BW_Hz / 2.0);
+        fcurhigh = nextfreq + (m_radio->m_BW_Hz / 2.0);
         //check to see if we're done with the sweep        
         if(fcurlow >= freq_high)
         {
             fcurrent = fstart;// back to the start
             // set the fft results
-            m_ffthist->AddData(sweepline->m_data,totalsweepbins,sweep_cf,sweep_bw);
-            //signal line data is ready
-            emit(SweepCompleted());
+            m_ffthist->AddData(sweepline->m_data,totalsweepbins,sweep_cf,sweep_bw);            
+            emit(SweepCompleted());//signal line data is ready
             idx = 0; //reset the index
         }
         else if (fcurhigh > freq_high)
         { //need to back it off a little
-            fcurrent = freq_high - (m_radio->m_BW / 2.0);
+            fcurrent = freq_high - (m_radio->m_BW_Hz / 2.0);
         }
         else
         {
             fcurrent = nextfreq;
         }
-
     }
 
     delete sweepline;
@@ -142,14 +131,22 @@ Eat sample for the duration of the 'settle time'
 */
 void Sweeper::EatSamples()
 {
-    int sz = 65536;
-    //long long startsettletime = GetTimeuS(); // mark the start of the settle time
-    static std::complex<float> buff[65536];
+    int sz = 16384;
+    long long startsettletime = GetTimeuS(); // mark the start of the settle time
+    static std::complex<float> buff[16384];
     void *buffs[] = {buff};
     int flags;
+
+    //long samples_to_eat; // using the bandwidth and the delay tie, calculate the number of sampels to eat
+    double samples_to_eat;
+
     long long time_ns;
     bool done = false;
     int ret = 0;
+    samples_to_eat = m_radio->m_BW_Hz / 100000; // convert to samples per uS
+    samples_to_eat *= m_settletime_uS;
+    double sampleseaten = 0;
+
     do
     {
         //read samples
@@ -158,6 +155,7 @@ void Sweeper::EatSamples()
         {
             int a = 100;
         }
+        /*
         if(ret < 0)
         {
             switch(ret)
@@ -173,7 +171,14 @@ void Sweeper::EatSamples()
         else if (ret != sz)
         {
             // ret is > 0, but less than request, probably safe to continue
-            done = true;
+          // done = true;
+        }
+*/
+        if(ret > 0)
+        {
+            sampleseaten += ret;
+            if(sampleseaten >= samples_to_eat)
+                done = true;
         }
         /*
         long long timenow = GetTimeuS();
@@ -183,8 +188,8 @@ void Sweeper::EatSamples()
         }
         if((timenow - startsettletime) > m_settletime_uS)
             done = true;
+*/
 
-        */
         //done = true;
     }while(!done);
 }

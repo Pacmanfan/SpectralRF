@@ -66,3 +66,9 @@ ui_wgt_marker_editor.h
 ui_wgt_marker_table.h
 
 ui_wgt_waterfall.h
+
+SpectralRF
+
+.qmake.stash
+
+Makefile

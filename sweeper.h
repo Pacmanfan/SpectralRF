@@ -33,7 +33,8 @@ tbins = sweep_bw / rbw
 tbins = 100Mhz / 4882.8125 = 20480 bins
 */
 
-#define DEFAULT_SETTLE_TIME 5000
+//#define DEFAULT_SETTLE_TIME 5000
+#define DEFAULT_SETTLE_TIME 2000
 
 struct SweepDataLine
 {
