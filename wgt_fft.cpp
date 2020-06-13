@@ -295,7 +295,7 @@ void wgt_FFT::UpdateFFT(FFT_Hist *pFFTHelp)
 {
     // add data to the vector
     static QVector<float> freqs;
-    static QVector<float> data;
+    static QVector<float> datanoisefloor;
     static QVector<float> dataMax;
     static QVector<float> dataAvg;
 
@@ -305,7 +305,7 @@ void wgt_FFT::UpdateFFT(FFT_Hist *pFFTHelp)
         if(freqs.size() != sz)
         {
             freqs.resize(sz);
-            data.resize(sz);
+            datanoisefloor.resize(sz);
             dataMax.resize(sz);
             dataAvg.resize(sz);
         }
@@ -314,36 +314,42 @@ void wgt_FFT::UpdateFFT(FFT_Hist *pFFTHelp)
     highfreq = pFFTHelp->GetHighFreqHz() / 1000000.0;
 
     pFFTHelp->Lock(); // lock the data to resolve the update issues
-    //float *rowdat = pFFTHelp->GetRow(0);//pFFTHelp->GetCacheRow(1);//pFFTHelp->AvgData();// get average data instead of instantaneous
     float *maxdat = pFFTHelp->MaxValues();// get max high-water marks
+    float *mindat = pFFTHelp->MinValues();// get max high-water marks
     float *avdat = pFFTHelp->AvgData();// get average values
+    float *noisefloor = pFFTHelp->GetNoiseFloor();
     bool showAvg = GraphVisible(FFT_AVG_GRAPH_NAME);
+
+    pFFTHelp->CalcNoiseFloor();
 
     for (int c = 0; c < pFFTHelp->GetBinSize(); c++)
     {
         double yaxfreqMhz = pFFTHelp->GetFreqHz(c);
         yaxfreqMhz /= 1000000.0; // convert from Hz to Mhz
         freqs[c] = yaxfreqMhz;
+        datanoisefloor[c] = noisefloor[c];
+        /*
         //for the 'data' / yellow grpah, we're implementing a LPF (sorta) of the average data
         if(c == 0)
         {
-            data[c] = avdat[c]*.75 + avdat[c+1]*.15 + avdat[c+2]*.10;
+            datanoisefloor[c] = avdat[c]*.75 + avdat[c+1]*.15 + avdat[c+2]*.10;
         }else if (c == 1)
         {
-            data[c] = avdat[c-1]*.2 + avdat[c]*.55 + avdat[c+1]*15 + avdat[c+2]*.10;
+            datanoisefloor[c] = avdat[c-1]*.2 + avdat[c]*.55 + avdat[c+1]*15 + avdat[c+2]*.10;
         }
         else if (c == pFFTHelp->GetBinSize() - 1)
         {
-            data[c] = (avdat[c-2]*.10 + avdat[c-1]*.15 +avdat[c]*.75);
+            datanoisefloor[c] = (avdat[c-2]*.10 + avdat[c-1]*.15 +avdat[c]*.75);
         }
         else if (c == pFFTHelp->GetBinSize() - 2)
         {
-            data[c] = (avdat[c-2]*.10 + avdat[c-1]*.15 +avdat[c]*.55 +  avdat[c+1]*.2 );
+            datanoisefloor[c] = (avdat[c-2]*.10 + avdat[c-1]*.15 +avdat[c]*.55 +  avdat[c+1]*.2 );
         }else
         {
             //data[c] = (avdat[c] + avdat[c-1] + avdat[c+1]) / 3;
-            data[c] = (avdat[c-2]*.20 + avdat[c-1]*.2 +avdat[c]*.2 +  avdat[c+1]*.2 + avdat[c+2] *.2);
+            datanoisefloor[c] = (avdat[c-2]*.20 + avdat[c-1]*.2 +avdat[c]*.2 +  avdat[c+1]*.2 + avdat[c+2] *.2);
         }
+        */
        // data[c] = rowdat[c];
         dataMax[c] = maxdat[c];
         if(showAvg)
@@ -355,7 +361,7 @@ void wgt_FFT::UpdateFFT(FFT_Hist *pFFTHelp)
 
     QCPGraph *gr = GetGraph(FFT_GRAPH_NAME);
   //  if(gr)
-        gr->setData(freqs,data);
+        gr->setData(freqs,datanoisefloor);
 
   //  if(showAvg)
     {
@@ -387,16 +393,19 @@ void wgt_FFT::UpdateFFT(FFT_Hist *pFFTHelp)
                 if(c == 0 )
                 {
                     upper = maxdat[0];
+                    lower = -120;//mindat[5];
                 }else
                 {
                     if(maxdat[c] > upper) upper = maxdat[c];
+                    //if(mindat[c] < lower && c > 5) lower = mindat[c];
                 }
             }
         }else
         {
             upper = pFFTHelp->GetMaxDBM();
+            lower = pFFTHelp->GetMinDBM();
         }
-        lower = pFFTHelp->GetMinDBM();
+
 
     }else
     {

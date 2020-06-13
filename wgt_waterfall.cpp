@@ -183,7 +183,7 @@ void wgt_waterfall::Update(FFT_Hist *pFFTHelp, double tlow, double thigh)
         upper = waterhigh;
     }
 
-    float *cdat = pFFTHelp->GetRow(0);//pFFTHelp->GetCacheRow(0);
+    float *cdat = pFFTHelp->GetRow(0);
 
     memcpy(dp,cdat,nx*ny*sizeof(float));
 

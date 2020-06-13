@@ -39,7 +39,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>2</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="tbControls">
           <attribute name="title">
@@ -480,6 +480,56 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                   <string>Spectrogram Energy </string>
                  </property>
                 </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QFrame" name="frmAveraging_2">
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_15">
+                 <item>
+                  <widget class="QLabel" name="lblNoiseFloorWidth">
+                   <property name="text">
+                    <string>Noise Floor Width</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSlider" name="sldNoiseFloorWidth">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
+                   <property name="maximum">
+                    <number>100</number>
+                   </property>
+                   <property name="singleStep">
+                    <number>1</number>
+                   </property>
+                   <property name="pageStep">
+                    <number>5</number>
+                   </property>
+                   <property name="value">
+                    <number>10</number>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="tickPosition">
+                    <enum>QSlider::NoTicks</enum>
+                   </property>
+                   <property name="tickInterval">
+                    <number>2</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </widget>
               </item>
               <item>

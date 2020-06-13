@@ -13,6 +13,7 @@ float FFT_UPDATE_RATE =  DEFAULT_FFT_UPDATE_RATE; // in hz
 float TIME_RESOLUTION = 1000000.0;
 float uS_PER_ROW = (TIME_RESOLUTION/FFT_UPDATE_RATE);
 int FFT_BIN_SIZE = DEFAULT_BIN_SIZE;
+#define NOISE_FLOOR_OFFSET 3 // 3db offset
 
 void Set_FFT_Rate(float ff_update_hz)
 {
@@ -40,18 +41,21 @@ FFT_Hist::FFT_Hist()
 {   
     m_alldat = nullptr;
     m_avg = nullptr;
+    m_noise_floor = nullptr;
     m_maxvalues = nullptr;
+    m_minvalues = nullptr;
     m_numrows = 0;
     m_binsize = 0;
     m_avg_min = 0;
     m_avg_max = 0;
     m_CFHz = 0;
     m_BWHz = 0;
-    m_emva_alpha = .8;//
+    m_emva_alpha = .13;//
 
     m_avg_rows = DEFAULT_AVG_LEN;
     Reset(MAX_FFT_SIZE);
     m_binsize = DEFAULT_BIN_SIZE;
+    m_noise_floor_binwidth = DEFAULT_NOISE_FLOOR_BINS;
 }
 
 FFT_Hist::~FFT_Hist()
@@ -66,10 +70,12 @@ void FFT_Hist::Reset(int binsize)
     m_binsize = binsize; //the X size of the bins
     //allocate memory
     m_maxvalues = new float[(unsigned)m_binsize]; // max values is a single row
+    m_minvalues = new float[(unsigned)m_binsize]; // min values is a single row
     m_alldat = new float[(unsigned)m_binsize * MAX_FFT_ROWS];
     m_avg = new float[(unsigned)m_binsize];//* MAX_FFT_ROWS]; //
+    m_noise_floor = new float[(unsigned)m_binsize];//* MAX_FFT_ROWS]; //
     m_numrows = 0;
-    ClearMaxValues();
+    ClearMinMaxValues();
     for(int c = 0; c < binsize ; c++) m_avg[c] = NOISE_FLOOR;
 }
 
@@ -87,11 +93,21 @@ void FFT_Hist::Release() // release allocated memory
         delete []m_avg;
         m_avg = nullptr;
     }
+    if(m_noise_floor != nullptr )
+    {
+        delete []m_noise_floor;
+        m_noise_floor = nullptr;
+    }
 
     if(m_maxvalues != nullptr )
     {
         delete []m_maxvalues;
         m_maxvalues = nullptr;
+    }
+    if(m_minvalues != nullptr )
+    {
+        delete []m_minvalues;
+        m_minvalues = nullptr;
     }
 
 }
@@ -101,11 +117,12 @@ int FFT_Hist::GetBinSize()
     return m_binsize;
 }
 
-void FFT_Hist::ClearMaxValues()
+void FFT_Hist::ClearMinMaxValues()
 {
     for(int c=0 ; c < m_binsize ; c++)
     {
         m_maxvalues[c] = NOISE_FLOOR;// set to noise floor
+        m_minvalues[c] = 0;
     }
 }
 
@@ -161,7 +178,7 @@ void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
         // don't reallocate memory anymore,
         m_binsize = numbins;
         m_numrows = 0;
-        ClearMaxValues();
+        ClearMinMaxValues();
         memset(m_alldat,0,MAX_FFT_SIZE * MAX_FFT_ROWS);
     }
 
@@ -170,7 +187,7 @@ void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
         m_CFHz = centerfreq; // set the new CF
         m_BWHz  = BWHz;
         m_numrows = 0; // this should reset the average
-        ClearMaxValues();
+        ClearMinMaxValues();
         m_avg_min =fft[0]; // get the first entry as a starting point
         m_avg_max =fft[0];
     }
@@ -184,7 +201,7 @@ void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
     memmove(dst,src,szmv);    
 
     CalcAvgEMA(fft);
-    CalcMax(fft); // look for the high-water marks
+    CalcMinMax(fft); // look for the high-water marks
 
     memcpy(m_alldat,fft,m_binsize * sizeof(float));//copy the new data to the first row
 
@@ -210,7 +227,7 @@ void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
 The idea is that the high-level will be marked, then fade over time
 until it goes back to the current level
 */
-void FFT_Hist::CalcMax(float *vals)
+void FFT_Hist::CalcMinMax(float *vals)
 {
 
     for(int x = 0; x < m_binsize;x++)
@@ -220,6 +237,10 @@ void FFT_Hist::CalcMax(float *vals)
         {
             m_maxvalues[x] = vals[x];
         }
+        if(vals[x] < m_minvalues[x])
+        {
+            m_minvalues[x] = vals[x];
+        }
         /*
         if(vals[x] > m_avg_max)
         {
@@ -228,7 +249,6 @@ void FFT_Hist::CalcMax(float *vals)
         */
     }
 }
-
 
 
 /*
@@ -275,35 +295,25 @@ void FFT_Hist::CalcAvgEMA(float *linedat)
     }
 }
 
+int FFT_Hist::noise_floor_binwidth() const
+{
+    return m_noise_floor_binwidth;
+}
+
+void FFT_Hist::setNoise_floor_binwidth(int noise_floor_binwidth)
+{
+    m_noise_floor_binwidth = noise_floor_binwidth;
+}
+
 float *FFT_Hist::MaxValues()
 {
     return m_maxvalues;
 }
-
-
-// this calculates the absolute min/max values based on what's in the cache
-// this assumes that the cache is always full of valid data
-/*
-void FFT_Hist::CalcCacheMinMax()
+float *FFT_Hist::MinValues()
 {
-
-    for(int y = 0; y < MAX_FFT_ROWS ; y ++)
-    {
-        float *dat = GetCacheRow(y);
-        for(int x = 0; x < m_binsize;x++)
-        {
-            if(x ==0 && y==0)
-            {
-                m_avg_min = dat[0];
-                m_avg_max = dat[0];
-            }
-            if(dat[x] < m_avg_min) m_avg_min = dat[x];
-            if(dat[x] > m_avg_max) m_avg_max = dat[x];
-        }
-    }
-   // m_avg_min = -100; // why is this here?
+    return m_minvalues;
 }
-*/
+
 float FFT_Hist::GetLowFreqHz()
 {
     float val = m_CFHz;
@@ -372,17 +382,35 @@ float *FFT_Hist::GetRow(int row) // get specified row of data (waterfall)
     return ptr;
 }
 
-float *FFT_Hist::GetAvgRow(int row) // get specified row of data (waterfall) average data
+float *FFT_Hist::GetAvgRow() // get specified row of data (waterfall) average data
 {
-    float *ptr = m_avg;
-    ptr += (row * m_binsize); // index into the correct pointer row
-    return ptr;
+    return m_avg;
 }
+
 /*
-float *FFT_Hist::GetCacheRow(int row) // get specified row of data (waterfall)
-{
-    float *ptr = m_cachedat;
-    ptr += (row * m_binsize); // index into the correct pointer row
-    return ptr;
-}
+calculate the noise floor from the average of the bins
 */
+void FFT_Hist::CalcNoiseFloor()
+{
+    int binwidth = m_noise_floor_binwidth;
+    //int idx = 0;
+    for(int c = 0; c < GetBinSize(); c++ )
+    {
+        int lowidx = c - binwidth;
+        int highidx = c + binwidth;
+        float mean = 0;
+
+        if(lowidx < 0 )lowidx = 0;
+        if(highidx > GetBinSize())
+            highidx = GetBinSize();
+
+        int range = highidx - lowidx;
+
+        for (int i = lowidx; i < highidx; i++)
+        {
+            mean += m_avg[i];
+        }
+        mean /= range;
+        m_noise_floor[c] = mean + NOISE_FLOOR_OFFSET;
+    }
+}

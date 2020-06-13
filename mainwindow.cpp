@@ -257,7 +257,7 @@ void MainWindow::on_chkShowMax_clicked()
 
 void MainWindow::on_cmdClearMax_clicked()
 {
-    m_sweeper->m_ffthist->ClearMaxValues();
+    m_sweeper->m_ffthist->ClearMinMaxValues();
 }
 
 
@@ -326,3 +326,8 @@ void MainWindow::on_spnFreqHigh_valueChanged(double arg1)
     on_sldBins_valueChanged(ui->sldBins->value());
 }
 
+
+void MainWindow::on_sldNoiseFloorWidth_valueChanged(int value)
+{
+    m_sweeper->m_ffthist->setNoise_floor_binwidth(value);
+}

@@ -48,7 +48,8 @@ void Sweeper::Sweep()
 
     double sweep_bw = freq_high - freq_low; // the entire bw that we're sweeping
     double sweep_cf = freq_low + (sweep_bw / 2.0); // the center frequency of the bandwidth we're sweepinh
-    double fstart = freq_low + (m_radio->m_BW_Hz / 2.0); // the start frequency
+    double half_bw = (m_radio->m_BW_Hz / 2.0); // half the bandwidth
+    double fstart = freq_low + half_bw; // the start frequency
     double rbw = m_radio->m_BW_Hz / m_nBinsPerFFT; //resolution bandwidth
     int totalsweepbins = (int)(sweep_bw / rbw); // total number of bins we've pre-allocated
     double fcurrent = 0.0,fold = 0.0; // current and last frequency
@@ -67,7 +68,7 @@ void Sweeper::Sweep()
     while(m_sweeping)
     {
         //calculate the current low freq
-        fcurlow = fcurrent - (m_radio->m_BW_Hz / 2.0);
+        fcurlow = fcurrent - half_bw;
         if(fold != fcurrent) // check to see if frequency is changing
         {
             m_radio->sdr->setFrequency(SOAPY_SDR_RX, 0,fcurrent);//move to the new center frequency            
@@ -95,8 +96,8 @@ void Sweeper::Sweep()
         //increment the frequency
         double nextfreq = fcurrent + m_radio->m_BW_Hz;
         //now, some checks
-        fcurlow = nextfreq - (m_radio->m_BW_Hz / 2.0);
-        fcurhigh = nextfreq + (m_radio->m_BW_Hz / 2.0);
+        fcurlow = nextfreq - half_bw;
+        fcurhigh = nextfreq + half_bw;
         //check to see if we're done with the sweep        
         if(fcurlow >= freq_high)
         {
@@ -106,9 +107,9 @@ void Sweeper::Sweep()
             emit(SweepCompleted());//signal line data is ready
             idx = 0; //reset the index
         }
-        else if (fcurhigh > freq_high)
-        { //need to back it off a little
-            fcurrent = freq_high - (m_radio->m_BW_Hz / 2.0);
+        else if (fcurhigh > freq_high) // if not done with sweep, check to see if high freq is past the end freq.
+        {
+            fcurrent = freq_high - half_bw; //need to back it off a little
         }
         else
         {

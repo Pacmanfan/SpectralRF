@@ -14,6 +14,7 @@
 
 #define DEFAULT_AVG_LEN 10 // use last X rows of data to calculate average
 #define DEFAULT_FFT_UPDATE_RATE 500.0 // the default update rate
+#define DEFAULT_NOISE_FLOOR_BINS 10
 
 extern float FFT_UPDATE_RATE;// =  DEFAULT_FFT_UPDATE_RATE; // in hz
 extern float uS_PER_ROW;//
@@ -44,6 +45,7 @@ public:
     float *AvgData(){return m_avg;} // return the power averaged data
     float *RawData(); // return the last entered raw data of samples
     float *MaxValues(); // return the high-water marks
+    float *MinValues(); // return the low-water marks
 
     // Set and get the number of rows to average
     void SetAverageLength(int avg_rows){m_avg_rows = avg_rows;}
@@ -52,12 +54,12 @@ public:
     int NumRows(); // current number of rows of data entered
     int MaxRows(); // returns the maxinum number of rows in this plot
     float *GetRow(int row); // get specified row of data (waterfall)
-    float *GetAvgRow(int row); // get specified row of data (waterfall) average data
-    float *GetCacheRow(int row); // get specified row of data (waterfall) cache data
+    float *GetAvgRow(); // get specified row of data (waterfall) average data
+    float *GetNoiseFloor(){return m_noise_floor;}
 
     void Set(float cfhz, float bwhz);
     void Reset(int binsize);
-    void ClearMaxValues();
+    void ClearMinMaxValues();
     float GetFreqHz(int binidx); // in hz
     float GetTime(int row); // get the time index at the given row (uS) from the uS_PER_ROW
     float GetLowFreqHz();
@@ -72,8 +74,9 @@ public:
     float GetRBWHz(){return GetBWHz() / (float)m_binsize;}
     void SetMaxRows(int maxrows);
     int GetBinIndex(float freqHz); // return the closest bin index to the frequency or -1
-  //  void CalcCacheMinMax(); // single min/max vals
-    void CalcMax(float *vals); // line vals
+    void CalcMinMax(float *vals); // line vals
+    void CalcNoiseFloor();
+
 
     void Lock(){m_mutex.lock();}
     void Unlock(){m_mutex.unlock();}
@@ -83,19 +86,24 @@ public:
     float m_avg_max; // valid until the freq / span changes
     int m_numrows;// number of rows entered in the m_alldat table
     int m_avg_rows; // how many rows to average
+    int m_noise_floor_binwidth;
 
     float m_emva_alpha; // exponential moving average alpha value (0 - 1)
     void SetAlpha(float val){m_emva_alpha = val;}
     float GetAlpha(){return m_emva_alpha;}
+
+    int noise_floor_binwidth() const;
+    void setNoise_floor_binwidth(int noise_floor_binwidth);
 
 private:
 
     int m_binsize; // number of bins (X table size)
     float *m_alldat; // a DEFAULT_BIN_SIZE * MAX_FFT_ROWS table image of values
     float *m_avg; // a table of averaged data
-   // float *m_cachedat; // a table of cached data
+    float *m_noise_floor; // a dynamic noise floor
     //max value tracking
     float *m_maxvalues; // a single row of max values (need to find some way to make them fade / remove)
+    float *m_minvalues; // a single row of max values (need to find some way to make them fade / remove)
     //long   *m_timestamp; // the time this value was updated last
 
     float m_CFHz; // in Hz - the center frequency

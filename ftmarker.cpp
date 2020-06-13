@@ -189,7 +189,7 @@ QString ftmarker::Name() const
 
 void ftmarker::setName(const QString &name)
 {
-    //m_Name = name;
+    m_Name = name;
     Signal();
 }
 

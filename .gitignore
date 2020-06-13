@@ -72,3 +72,5 @@ SpectralRF
 .qmake.stash
 
 Makefile
+
+SpectralRF.pro.user
