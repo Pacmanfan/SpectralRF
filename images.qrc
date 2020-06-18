@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/add.png</file>
+        <file>icons/analyst-512.png</file>
+        <file>icons/blueplay.jpg</file>
+        <file>icons/bluestop1.jpg</file>
+        <file>icons/bluestop2.jpg</file>
+        <file>icons/close.png</file>
+        <file>icons/down1.png</file>
+        <file>icons/down2.png</file>
+        <file>icons/downsmall.png</file>
+        <file>icons/Help.png</file>
+        <file>icons/load.png</file>
+        <file>icons/minus.png</file>
+        <file>icons/Record-Disabled-icon.png</file>
+        <file alias="record">icons/Record-Hot-icon.png</file>
+        <file>icons/Settings-icon.png</file>
+        <file>icons/Settings-Sounds-icon.png</file>
+        <file>icons/up1.png</file>
+        <file>icons/up2.png</file>
+        <file>icons/upsmall.png</file>
+        <file alias="play">icons/Play-Hot-icon.png</file>
+        <file alias="stop">icons/Stop-Normal-Red-icon.png</file>
+    </qresource>
+</RCC>

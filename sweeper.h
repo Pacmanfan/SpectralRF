@@ -35,15 +35,7 @@ tbins = 100Mhz / 4882.8125 = 20480 bins
 
 //#define DEFAULT_SETTLE_TIME 5000
 #define DEFAULT_SETTLE_TIME 2000
-
-struct SweepDataLine
-{
-    SweepDataLine(int numbins);
-    long long m_timestamp;// the timestamp of when this sweep was completed in nanoseconds
-    float *m_data;
-    int m_numbins; // total number of bins across the sweepline
-};
-
+class SweepDataLine;
 class Sweeper : public QObject
 {
     Q_OBJECT
@@ -63,14 +55,15 @@ public:
     double m_freq_low,m_freq_high; // the low and high freqs that we're scanning across
     double m_viewfreqlow,m_viewfreqhigh;// where the user is actually looking at in Mhz
     int m_nBinsPerFFT; // the FFT resolution per segment (the SDR bandwidth, not the sweepline bins)
-    int m_overlappercent;
-    FFT_Hist *m_ffthist;
+    int m_overlappercent; // the % of overlap of the individual FFT segments
+    FFT_Hist *m_ffthist; // place to gather the lines of FFT data
+    SweepDataLine *m_sweepline;
+    fft_fftw *m_fftw; // the algorithm used to calculate the fft
     bool m_correctIQDrop;
     long long m_settletime_uS; // the time to allow to settle after changing frequencies
 private:
-    bool m_sweeping;
+    volatile bool m_sweeping;
     pthread_t rst; //  thread
-    fft_fftw fft; // This calculates the FFT from the IQ timeseries.
 
 signals:
     void SweepCompleted(); // a single sweep was completed

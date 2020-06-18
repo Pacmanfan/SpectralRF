@@ -27,7 +27,7 @@ Cache to memory?
 *    Set/Get Bandwidth
 
 Sweep Settings
-    % overlap
+*    % overlap
 
 *Trace Settings
 *    Show Max Checkbox
@@ -38,4 +38,21 @@ Display settings:
     Auto Min/Max finder (FFT / Waterfall)
     Manual Min/Max level set (FFT / Waterfall)
 
-Tracer
+*Tracer
+
+*Toolbar
+Add version number
+*Show Frequency on toolbar
+Record FFT sweeps to disk
+Convert FFT sweeps to images
+    Color options
+
+Save / Load Markers
+
+Signal detection
+    peak detection
+    narrow band parameter estimation (center walk outward)
+    wide band detection (walk left/right right/left to find plateaus)
+
+
+

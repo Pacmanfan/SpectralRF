@@ -8,43 +8,21 @@
 
 using namespace std;
 
-#define NOISE_FLOOR -145.0f
+#define NOISE_FLOOR -130.0f
 float FFT_UPDATE_RATE =  DEFAULT_FFT_UPDATE_RATE; // in hz
 float TIME_RESOLUTION = 1000000.0;
 float uS_PER_ROW = (TIME_RESOLUTION/FFT_UPDATE_RATE);
-int FFT_BIN_SIZE = DEFAULT_BIN_SIZE;
-#define NOISE_FLOOR_OFFSET 3 // 3db offset
-
-void Set_FFT_Rate(float ff_update_hz)
-{
-    FFT_UPDATE_RATE =  ff_update_hz; // in hz
-    uS_PER_ROW = (TIME_RESOLUTION/FFT_UPDATE_RATE);
-}
-
-float Get_FFT_Rate()
-{
-    return FFT_UPDATE_RATE;
-}
-
-void Set_FFT_BinSize(int numbins)
-{
-    FFT_BIN_SIZE = numbins;
-}
-
-int Get_FFT_BinSize()
-{
-    return FFT_BIN_SIZE;
-}
+#define DEF_NOISE_FLOOR_OFFSET 3 // 3db offset
 
 
 FFT_Hist::FFT_Hist()
 {   
-    m_alldat = nullptr;
-    m_avg = nullptr;
-    m_noise_floor = nullptr;
-    m_maxvalues = nullptr;
-    m_minvalues = nullptr;
-    m_numrows = 0;
+    m_alldat = NULL;
+    m_avg = NULL;
+    m_noise_floor = NULL;
+    m_maxvalues = NULL;
+    m_minvalues = NULL;
+    //m_numrows = 0;
     m_binsize = 0;
     m_avg_min = 0;
     m_avg_max = 0;
@@ -56,6 +34,7 @@ FFT_Hist::FFT_Hist()
     Reset(MAX_FFT_SIZE);
     m_binsize = DEFAULT_BIN_SIZE;
     m_noise_floor_binwidth = DEFAULT_NOISE_FLOOR_BINS;
+    m_noise_floor_offset = DEF_NOISE_FLOOR_OFFSET;
 }
 
 FFT_Hist::~FFT_Hist()
@@ -65,6 +44,12 @@ FFT_Hist::~FFT_Hist()
 
 void FFT_Hist::Reset(int binsize)
 {
+    if(m_binsize == binsize)
+    {
+        ClearMinMaxValues();
+        for(int c = 0; c < binsize ; c++) m_avg[c] = NOISE_FLOOR;
+        return; // already the right size
+    }
     Release(); // free all previously allocated memory
    // printf("FFT_Helper::Reset Binsize = %d\r\n",binsize);
     m_binsize = binsize; //the X size of the bins
@@ -74,42 +59,39 @@ void FFT_Hist::Reset(int binsize)
     m_alldat = new float[(unsigned)m_binsize * MAX_FFT_ROWS];
     m_avg = new float[(unsigned)m_binsize];//* MAX_FFT_ROWS]; //
     m_noise_floor = new float[(unsigned)m_binsize];//* MAX_FFT_ROWS]; //
-    m_numrows = 0;
     ClearMinMaxValues();
     for(int c = 0; c < binsize ; c++) m_avg[c] = NOISE_FLOOR;
 }
 
 void FFT_Hist::Release() // release allocated memory
 {
-    //printf("FFT_Helper::Release()\r\n");
-    if(m_alldat != nullptr )
+    if(m_alldat != NULL )
     {
         delete []m_alldat;
-        m_alldat = nullptr;
+        m_alldat = NULL;
     }
 
-    if(m_avg != nullptr )
+    if(m_avg != NULL )
     {
         delete []m_avg;
-        m_avg = nullptr;
+        m_avg = NULL;
     }
-    if(m_noise_floor != nullptr )
+    if(m_noise_floor != NULL )
     {
         delete []m_noise_floor;
-        m_noise_floor = nullptr;
+        m_noise_floor = NULL;
     }
 
-    if(m_maxvalues != nullptr )
+    if(m_maxvalues != NULL )
     {
         delete []m_maxvalues;
-        m_maxvalues = nullptr;
+        m_maxvalues = NULL;
     }
-    if(m_minvalues != nullptr )
+    if(m_minvalues != NULL )
     {
         delete []m_minvalues;
-        m_minvalues = nullptr;
+        m_minvalues = NULL;
     }
-
 }
 
 int FFT_Hist::GetBinSize()
@@ -170,14 +152,11 @@ void FFT_Hist::Set(float centerfreq,float BWHz)
 
 void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
 {
-    Lock();
+  //  Lock();
 
     if(numbins != m_binsize) // support a changing bin size if needed
     {
-        //Reset(numbins);
-        // don't reallocate memory anymore,
         m_binsize = numbins;
-        m_numrows = 0;
         ClearMinMaxValues();
         memset(m_alldat,0,MAX_FFT_SIZE * MAX_FFT_ROWS);
     }
@@ -186,7 +165,7 @@ void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
     {
         m_CFHz = centerfreq; // set the new CF
         m_BWHz  = BWHz;
-        m_numrows = 0; // this should reset the average
+
         ClearMinMaxValues();
         m_avg_min =fft[0]; // get the first entry as a starting point
         m_avg_max =fft[0];
@@ -195,32 +174,15 @@ void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float BWHz)
     unsigned char *dst,*src; // destination and start pointers in bytes here
     int szmv,rowsz;    
     rowsz = m_binsize * sizeof(float);    //calculate the size of the row in bytes
-    szmv = rowsz * ( MAX_FFT_ROWS - 1);    // the block size is the row size * the number of rows -1
+//    szmv = rowsz * ( MAX_FFT_ROWS - 1);    // the block size is the row size * the number of rows -1
+    szmv = rowsz * ( MAX_FFT_ROWS - 2);    // the block size is the row size * the number of rows -1
     src = (unsigned char *)m_alldat; // the source is the begining of the all data block
     dst = src + rowsz;
     memmove(dst,src,szmv);    
-
     CalcAvgEMA(fft);
     CalcMinMax(fft); // look for the high-water marks
-
     memcpy(m_alldat,fft,m_binsize * sizeof(float));//copy the new data to the first row
-
-    m_numrows ++; //
-    if(m_numrows > MAX_FFT_ROWS)
-    {
-        m_numrows = MAX_FFT_ROWS; // limit the max number of rows
-    }
-
-
-/*
-    //alright, now copy the average table down
-    src = (unsigned char *)m_avg; // the source is the begining of the average block
-    dst = src + rowsz; // the destination is the next row down
-    memmove(dst,src,szmv); // move the block down one row
-    // now, calculate the new average fft row from the last X samples
-    //CalcAvg(fft);
-*/
-    Unlock();
+  //  Unlock();
 }
 
 /*
@@ -252,12 +214,6 @@ void FFT_Hist::CalcMinMax(float *vals)
 
 
 /*
-This function calculates a single line (the latest) of average data
-based on the last m_avgrows rows
-*/
-
-
-/*
 need a new function to calculate the exponential moving average
 https://stackoverflow.com/questions/10990618/calculate-rolling-moving-average-in-c
 You pick a constant "alpha" that is between 0 and 1, and compute this:
@@ -266,20 +222,7 @@ You just need to find a value of "alpha" where the effect of a given sample only
 */
 void FFT_Hist::CalcAvgEMA(float *linedat)
 {
-    /*
-    int navrows = m_avg_rows; // the number of rows to average
-    if(m_numrows < navrows )
-    {
-        navrows = m_numrows;
-    }
 
-    //float *lastavg = &m_avg[m_binsize]; //last line of average values
-    // iterate over the x column from 0 to bin size
-    if(navrows == 1)
-    {
-        memcpy(m_avg,linedat,(unsigned) m_binsize * sizeof(float));
-    }
-*/
     for(int x = 0; x < m_binsize;x++)
     {
         //accumulator = (alpha * new_value) + (1.0 - alpha) * accumulator
@@ -293,6 +236,16 @@ void FFT_Hist::CalcAvgEMA(float *linedat)
         if(m_avg[x] < m_avg_min) m_avg_min = m_avg[x];
         if(m_avg[x] > m_avg_max) m_avg_max = m_avg[x];
     }
+}
+
+double FFT_Hist::noise_floor_offset() const
+{
+    return m_noise_floor_offset;
+}
+
+void FFT_Hist::setNoise_floor_offset(double noise_floor_offset)
+{
+    m_noise_floor_offset = noise_floor_offset;
 }
 
 int FFT_Hist::noise_floor_binwidth() const
@@ -319,7 +272,6 @@ float FFT_Hist::GetLowFreqHz()
     float val = m_CFHz;
     val -= (m_BWHz / 2.0f);
     return val;
-    //return m_centerfreq - (m_spanHz / 2);
 }
 
 float FFT_Hist::GetHighFreqHz()
@@ -363,17 +315,10 @@ int FFT_Hist::GetBinIndex(float freqHz)
     }
 }
 
-
-int FFT_Hist::NumRows() // current number of rows of data entered
-{
-    return m_numrows;
-}
-
 int FFT_Hist::MaxRows()
 {
     return MAX_FFT_ROWS;
 }
-
 
 float *FFT_Hist::GetRow(int row) // get specified row of data (waterfall)
 {
@@ -411,6 +356,6 @@ void FFT_Hist::CalcNoiseFloor()
             mean += m_avg[i];
         }
         mean /= range;
-        m_noise_floor[c] = mean + NOISE_FLOOR_OFFSET;
+        m_noise_floor[c] = mean + m_noise_floor_offset;
     }
 }

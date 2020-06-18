@@ -14,7 +14,6 @@ fft_fftw::~fft_fftw()
         fftwf_destroy_plan(p);
         fftwf_free(in);
         fftwf_free(out);
-
     }
 }
 
@@ -59,10 +58,8 @@ void fft_fftw::PerformFFT(complex<float> *inIQ, float *outFFT, unsigned int nums
     uint32_t nHalf = fftsize / 2;
     for( uint32_t i=0; i < nHalf; ++i )
     {
-        // const float& re = (out+i)->re;
-        // const float& im = (out+i)->im;
         const float& re = ((float *)(out+i))[0];
-        const float& im = ((float *)(out+i))[1];
+        const float& im = ((float *)(out+i))[1];//https://github.com/akontsevich/WidgetBox.git
 
         const uint32_t nIndex = i + nHalf;
         outFFT[nIndex] = fScale * ::log10(::sqrt( re * re + im * im )) + pwroffset;
@@ -76,8 +73,7 @@ void fft_fftw::PerformFFT(complex<float> *inIQ, float *outFFT, unsigned int nums
         const float& im = ((float *)(out+i))[1];
         const uint32_t nIndex = i - nHalf;
         outFFT[nIndex] = fScale * ::log10(::sqrt( re * re + im * im )) + pwroffset;
-      //  if(nIndex == 0)
-       //     int t=1;
+
     }
 }
 

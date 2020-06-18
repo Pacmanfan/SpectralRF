@@ -21,56 +21,58 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
-LIBS += -lboost_system -lfftw3f -lSoapySDR
+LIBS += -lboost_system -lfftw3f -lSoapySDR -lpthread
 
 CONFIG += c++11
 
 SOURCES += \
-        fft_fftw.cpp \
-        fft_hist.cpp \
-        ftmarker.cpp \
-        ftmarker_gui.cpp \
-        main.cpp \
-        mainwindow.cpp \
-        qcustomplot.cpp \
-        sweeper.cpp \
-        wgt_fft.cpp \
-        wgt_util.cpp \
-        wgt_waterfall.cpp \
+    fft_fftw.cpp \
+    fft_hist.cpp \
+    ftmarker.cpp \
+    ftmarker_gui.cpp \
+    main.cpp \
+    mainwindow.cpp \
+    qcustomplot.cpp \
+    sweeper.cpp \
+    wgt_fft.cpp \
+    wgt_util.cpp \
+    wgt_waterfall.cpp \
     wgt_marker_editor.cpp \
     wgt_marker_table.cpp \
     wgt_sig_base.cpp \
     radiosettings.cpp \
     sdr_device.cpp \
     sdr_device_manager.cpp \
-    sigtuner_gui.cpp
+    sigtuner_gui.cpp \
+    sweepfile.cpp
 
 
 HEADERS += \
-        fft_fftw.h \
-        fft_hist.h \
-        ftmarker.h \
-        ftmarker_gui.h \
-        mainwindow.h \
-        qcustomplot.h \
-        sweeper.h \
-        wgt_fft.h \
-        wgt_sig_base.h \
-        wgt_util.h \
-        wgt_waterfall.h \
+    fft_fftw.h \
+    fft_hist.h \
+    ftmarker.h \
+    ftmarker_gui.h \
+    mainwindow.h \
+    qcustomplot.h \
+    sweeper.h \
+    wgt_fft.h \
+    wgt_sig_base.h \
+    wgt_util.h \
+    wgt_waterfall.h \
     wgt_marker_editor.h \
     wgt_marker_table.h \
     radiosettings.h \
     sdr_device.h \
     sdr_device_manager.h \
     sigtuner_gui.h \
-    sinetable.h
+    sinetable.h \
+    sweepfile.h
 
 
 FORMS += \
-        mainwindow.ui \
-        wgt_fft.ui \
-        wgt_waterfall.ui \
+    mainwindow.ui \
+    wgt_fft.ui \
+    wgt_waterfall.ui \
     wgt_marker_editor.ui \
     wgt_marker_table.ui \
     radiosettings.ui
@@ -84,3 +86,6 @@ DISTFILES += \
     Notes.txt \
     src/Notes.txt \
     README.md
+
+RESOURCES += \
+    images.qrc

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1152</width>
-    <height>670</height>
+    <height>711</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,46 +39,13 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="tbControls">
           <attribute name="title">
            <string>Scan</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_5">
-           <item>
-            <widget class="QGroupBox" name="groupBox">
-             <property name="font">
-              <font>
-               <pointsize>11</pointsize>
-              </font>
-             </property>
-             <property name="title">
-              <string>Controls</string>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_2">
-              <property name="leftMargin">
-               <number>2</number>
-              </property>
-              <property name="topMargin">
-               <number>2</number>
-              </property>
-              <property name="rightMargin">
-               <number>2</number>
-              </property>
-              <property name="bottomMargin">
-               <number>2</number>
-              </property>
-              <item>
-               <widget class="QPushButton" name="cmdStartStop">
-                <property name="text">
-                 <string>Start Scanning</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
            <item>
             <widget class="QGroupBox" name="grpSweepFreqControls">
              <property name="font">
@@ -87,7 +54,7 @@
               </font>
              </property>
              <property name="title">
-              <string>Scanning Frequencies</string>
+              <string>Scanning Options</string>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout">
               <property name="spacing">
@@ -193,6 +160,11 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                      <width>0</width>
                      <height>48</height>
                     </size>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>11</pointsize>
+                    </font>
                    </property>
                    <property name="styleSheet">
                     <string notr="true">QDoubleSpinBox::up-button { width: 32px; }
@@ -304,7 +276,7 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                  <number>25</number>
                 </property>
                 <property name="value">
-                 <number>10</number>
+                 <number>20</number>
                 </property>
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
@@ -316,6 +288,11 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
            </item>
            <item>
             <widget class="QGroupBox" name="groupBox_2">
+             <property name="font">
+              <font>
+               <pointsize>11</pointsize>
+              </font>
+             </property>
              <property name="title">
               <string>Radio Settings</string>
              </property>
@@ -415,7 +392,7 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                  <item>
                   <widget class="QLabel" name="lblGain">
                    <property name="text">
-                    <string>Gain</string>
+                    <string>Tuner Gain</string>
                    </property>
                   </widget>
                  </item>
@@ -483,7 +460,7 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                </widget>
               </item>
               <item>
-               <widget class="QFrame" name="frmAveraging_2">
+               <widget class="QFrame" name="frmNoiseFloorWidth">
                 <property name="frameShape">
                  <enum>QFrame::StyledPanel</enum>
                 </property>
@@ -494,7 +471,7 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                  <item>
                   <widget class="QLabel" name="lblNoiseFloorWidth">
                    <property name="text">
-                    <string>Noise Floor Width</string>
+                    <string>Noise Floor Width (1 - 100 bins)</string>
                    </property>
                   </widget>
                  </item>
@@ -517,6 +494,56 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                    </property>
                    <property name="value">
                     <number>10</number>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="tickPosition">
+                    <enum>QSlider::NoTicks</enum>
+                   </property>
+                   <property name="tickInterval">
+                    <number>2</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QFrame" name="frmNoiseFloorOffset">
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_16">
+                 <item>
+                  <widget class="QLabel" name="lblNoieFloorOffset">
+                   <property name="text">
+                    <string>Noise Floor Offset (-5db - &gt; 5db)</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSlider" name="sldNoiseFloorOffset">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <property name="minimum">
+                    <number>0</number>
+                   </property>
+                   <property name="maximum">
+                    <number>100</number>
+                   </property>
+                   <property name="singleStep">
+                    <number>4</number>
+                   </property>
+                   <property name="pageStep">
+                    <number>10</number>
+                   </property>
+                   <property name="value">
+                    <number>70</number>
                    </property>
                    <property name="orientation">
                     <enum>Qt::Horizontal</enum>
@@ -609,7 +636,7 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
               <item>
                <widget class="QCheckBox" name="chkFFT">
                 <property name="text">
-                 <string>FFT</string>
+                 <string>Show FFT Graph</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
@@ -619,7 +646,7 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
               <item>
                <widget class="QCheckBox" name="chkWaterfall">
                 <property name="text">
-                 <string>Waterfall</string>
+                 <string>Show Waterfall</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
@@ -629,7 +656,7 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
               <item>
                <widget class="QCheckBox" name="chkMarkers">
                 <property name="text">
-                 <string>Markers</string>
+                 <string>Show Markers Window</string>
                 </property>
                 <property name="checked">
                  <bool>false</bool>
@@ -637,91 +664,67 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                </widget>
               </item>
               <item>
-               <widget class="QGroupBox" name="grpTraceSettings">
-                <property name="title">
-                 <string>Trace Settings</string>
+               <widget class="QCheckBox" name="chkShowMax">
+                <property name="text">
+                 <string>Show Max Graph</string>
                 </property>
-                <layout class="QVBoxLayout" name="verticalLayout_8">
-                 <property name="spacing">
-                  <number>4</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>2</number>
-                 </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="cmdClearMax">
+                <property name="text">
+                 <string>Clear Max Graph</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QFrame" name="frmAveraging">
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_9">
                  <item>
-                  <widget class="QPushButton" name="cmdClearMax">
+                  <widget class="QLabel" name="lblFFTAverage">
                    <property name="text">
-                    <string>Clear Max</string>
+                    <string>FFT Averaging</string>
                    </property>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QCheckBox" name="chkShowMax">
-                   <property name="text">
-                    <string>Show Max Trace</string>
+                  <widget class="QSlider" name="sldAverage">
+                   <property name="styleSheet">
+                    <string notr="true"/>
                    </property>
-                   <property name="checked">
-                    <bool>true</bool>
+                   <property name="minimum">
+                    <number>1</number>
                    </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QFrame" name="frmAveraging">
-                   <property name="frameShape">
-                    <enum>QFrame::StyledPanel</enum>
+                   <property name="maximum">
+                    <number>1000</number>
                    </property>
-                   <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
+                   <property name="singleStep">
+                    <number>10</number>
                    </property>
-                   <layout class="QVBoxLayout" name="verticalLayout_9">
-                    <item>
-                     <widget class="QLabel" name="lblFFTAverage">
-                      <property name="text">
-                       <string>FFT Averaging</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QSlider" name="sldAverage">
-                      <property name="styleSheet">
-                       <string notr="true"/>
-                      </property>
-                      <property name="minimum">
-                       <number>1</number>
-                      </property>
-                      <property name="maximum">
-                       <number>1000</number>
-                      </property>
-                      <property name="singleStep">
-                       <number>10</number>
-                      </property>
-                      <property name="pageStep">
-                       <number>100</number>
-                      </property>
-                      <property name="value">
-                       <number>100</number>
-                      </property>
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="tickPosition">
-                       <enum>QSlider::TicksBelow</enum>
-                      </property>
-                      <property name="tickInterval">
-                       <number>2</number>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
+                   <property name="pageStep">
+                    <number>100</number>
+                   </property>
+                   <property name="value">
+                    <number>100</number>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="tickPosition">
+                    <enum>QSlider::NoTicks</enum>
+                   </property>
+                   <property name="tickInterval">
+                    <number>2</number>
+                   </property>
                   </widget>
                  </item>
                 </layout>
@@ -792,12 +795,23 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
    <addaction name="menuFile"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
+   <property name="iconSize">
+    <size>
+     <width>48</width>
+     <height>48</height>
+    </size>
+   </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionRecord"/>
+   <addaction name="actionPlay"/>
+   <addaction name="actionStop"/>
+   <addaction name="separator"/>
+   <addaction name="actionFrequency"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionExit">
@@ -808,6 +822,47 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
   <action name="actionRadio">
    <property name="text">
     <string>Radio</string>
+   </property>
+  </action>
+  <action name="actionRecord">
+   <property name="icon">
+    <iconset resource="images.qrc">
+     <normaloff>:/record</normaloff>:/record</iconset>
+   </property>
+   <property name="text">
+    <string>Record</string>
+   </property>
+   <property name="toolTip">
+    <string>Start Scan and Record</string>
+   </property>
+  </action>
+  <action name="actionPlay">
+   <property name="icon">
+    <iconset resource="images.qrc">
+     <normaloff>:/play</normaloff>:/play</iconset>
+   </property>
+   <property name="text">
+    <string>Start Scan</string>
+   </property>
+   <property name="toolTip">
+    <string>Start Scan</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="icon">
+    <iconset resource="images.qrc">
+     <normaloff>:/stop</normaloff>:/stop</iconset>
+   </property>
+   <property name="text">
+    <string>Stop</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop Scan</string>
+   </property>
+  </action>
+  <action name="actionFrequency">
+   <property name="text">
+    <string>Frequency</string>
    </property>
   </action>
  </widget>
@@ -832,6 +887,8 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="images.qrc"/>
+ </resources>
  <connections/>
 </ui>

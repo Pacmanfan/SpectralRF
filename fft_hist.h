@@ -16,6 +16,7 @@
 #define DEFAULT_FFT_UPDATE_RATE 500.0 // the default update rate
 #define DEFAULT_NOISE_FLOOR_BINS 10
 
+
 extern float FFT_UPDATE_RATE;// =  DEFAULT_FFT_UPDATE_RATE; // in hz
 extern float uS_PER_ROW;//
 extern float TIME_RESOLUTION; // 1000 for ms, 1000000 for us
@@ -24,12 +25,6 @@ extern int FFT_BIN_SIZE;
 
 #define Pow2Mw(pwrIn) (pow(10,(pwrIn)/10))
 #define Mw2Pow(mwIn) (10*log10(mwIn))
-
-void Set_FFT_Rate(float ff_update_hz);
-float Get_FFT_Rate();
-void Set_FFT_BinSize(int numbins);
-int Get_FFT_BinSize();
-
 
 class FFT_Hist
 {
@@ -51,7 +46,6 @@ public:
     void SetAverageLength(int avg_rows){m_avg_rows = avg_rows;}
     int GetAverageLength(){return m_avg_rows;}
 
-    int NumRows(); // current number of rows of data entered
     int MaxRows(); // returns the maxinum number of rows in this plot
     float *GetRow(int row); // get specified row of data (waterfall)
     float *GetAvgRow(); // get specified row of data (waterfall) average data
@@ -84,9 +78,10 @@ public:
 
     float m_avg_min; // valid until the freq / span changes
     float m_avg_max; // valid until the freq / span changes
-    int m_numrows;// number of rows entered in the m_alldat table
+
     int m_avg_rows; // how many rows to average
     int m_noise_floor_binwidth;
+    double m_noise_floor_offset;
 
     float m_emva_alpha; // exponential moving average alpha value (0 - 1)
     void SetAlpha(float val){m_emva_alpha = val;}
@@ -94,6 +89,9 @@ public:
 
     int noise_floor_binwidth() const;
     void setNoise_floor_binwidth(int noise_floor_binwidth);
+
+    double noise_floor_offset() const;
+    void setNoise_floor_offset(double noise_floor_offset);
 
 private:
 

@@ -13,13 +13,15 @@
 
 bool showTrace = true;
 int numbins  = 1048;
+#define VIEWTIMERRES 50
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle("Spectrum Profiler");
+    setWindowTitle(QString(APP_NAME) + " " + QString(APP_VERSION));
     setWindowState(Qt::WindowState::WindowMaximized);
     plotFFT = ui->wgtfft;
     plotWaterfall = ui->wgtwaterfall;
@@ -52,11 +54,12 @@ MainWindow::MainWindow(QWidget *parent) :
     SetupGUIforRadio();
     connect(m_sweeper,SIGNAL(SweepCompleted()),this,SLOT(onSweepLineCompleted()));
     connect(&m_viewtimer,SIGNAL(timeout()),this,SLOT(onViewTimer()));
-    m_viewtimer.start(50);
     //set up a few more connections here.
     connect(plotFFT->plot->xAxis, SIGNAL(rangeChanged(QCPRange)), plotWaterfall->plot->xAxis,SLOT(setRange(QCPRange)));
     connect(plotWaterfall->plot->xAxis, SIGNAL(rangeChanged(QCPRange)), plotFFT->plot->xAxis,SLOT(setRange(QCPRange)));
     connect(plotFFT->plot->xAxis, SIGNAL(rangeChanged(QCPRange)), this,SLOT(onRangeChanged(QCPRange)));
+    connect(plotFFT,SIGNAL(OnFreqHighlight(double)),this,SLOT(OnFreqHighlight(double)));
+    connect(plotWaterfall,SIGNAL(OnFreqHighlight(double)),this,SLOT(OnFreqHighlight(double)));
 
     plotWaterfall->colorMap->setGradient((QCPColorGradient::GradientPreset)9);// 9 == spectrum
     float cf = 850;
@@ -75,7 +78,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->wgtMarkers->setVisible(false);
     connect(ui->actionRadio,SIGNAL(triggered(bool)),this,SLOT(onActionRadioMenu()));
     connect(ui->actionExit,SIGNAL(triggered(bool)),this,SLOT(onActionMenuExit()));
+    connect(ui->actionRecord,SIGNAL(triggered(bool)),this,SLOT(onActionRecord()));
+    connect(ui->actionPlay,SIGNAL(triggered(bool)),this,SLOT(onActionPlay()));
+    connect(ui->actionStop,SIGNAL(triggered(bool)),this,SLOT(onActionStop()));
     on_sldBins_valueChanged(ui->sldBins->value());
+    SetupToolBar();
+    LoadSettings();
+    ui->actionRecord->setEnabled(true);
+    ui->actionPlay->setEnabled(true);
+    ui->actionStop->setEnabled(false);
 }
 
 MainWindow::~MainWindow()
@@ -112,10 +123,81 @@ void MainWindow::SetupGUIforRadio()
     ui->chkAGC->setChecked(autogain);
 
 }
+void MainWindow::LoadSettings()
+{
+
+}
+
+void MainWindow::SaveSettings()
+{
+
+}
+
+void MainWindow::StartSweep(bool record)
+{
+    if(m_sweeper->IsSweeping()==false)
+    {
+        if(ui->spnFreqLow->value() > ui->spnFreqHigh->value())
+        {
+            QMessageBox::information(this,"Frequency mismatch","Low frequency is greater than high frequency.");
+            return;
+        }
+        //validate to see if low > high (todo)
+        double oneM = 1000000;
+        float bw = (ui->spnFreqHigh->value() - ui->spnFreqLow->value())/2.0;
+        float cf = (ui->spnFreqHigh->value() + ui->spnFreqLow->value())/2.0;
+
+        m_mrk_main.setCF_MHz(cf);
+        m_mrk_main.setBW_MHz(1);
+
+        plotFFT->plot->xAxis->setRange(cf - (bw/2),cf + (bw/2));
+        plotFFT->plot->xAxis2->setRange(cf - (bw/2),cf + (bw/2));
+        plotFFT->plot->update();
+        plotWaterfall->setXRange(cf - (bw/2),cf + (bw/2));
+        plotWaterfall->setRange_dBm(-140,-30);
+        plotWaterfall->plot->update();
+
+        int overlap = ui->sldOverlap->value();
+        m_sweeper->StartSweep(ui->spnFreqLow->value()*oneM,ui->spnFreqHigh->value()*oneM,numbins,overlap);
+
+    }
+    if(m_sweeper->IsSweeping()==true)
+    {
+        m_viewtimer.start(VIEWTIMERRES);
+
+        ui->grpSweepFreqControls->setEnabled(false);
+        ui->actionRecord->setEnabled(false);
+        ui->actionPlay->setEnabled(false);
+        ui->actionStop->setEnabled(true);
+    }
+}
+
+void MainWindow::StopSweep()
+{
+    m_viewtimer.stop();
+    //probably need a wait here to make sure we're not still drawing...
+    int c= 0;
+
+    if(m_sweeper->IsSweeping()==true)
+    {
+        m_sweeper->StopSweep();
+    }
+  //  if(m_sweeper->IsSweeping()==false)
+    {
+        ui->grpSweepFreqControls->setEnabled(true);
+        ui->actionRecord->setEnabled(true);
+        ui->actionPlay->setEnabled(true);
+        ui->actionStop->setEnabled(false);
+    }
+}
+
+void MainWindow::SetupToolBar()
+{
+
+}
 
 void MainWindow::onViewTimer()
 {
-
     if(m_sweeper->IsSweeping() == false)
         return;
     //update the waterfall / fft views
@@ -153,6 +235,27 @@ void MainWindow::onActionMenuExit()
     QApplication::quit();
 }
 
+void MainWindow::onActionRecord()
+{
+    //start the sweep and start recording
+    //StartSweep(true);
+    m_sweeper->m_ffthist->Reset(2000);
+    m_sweeper->m_ffthist->Reset(4000);
+    m_sweeper->m_ffthist->Reset(6000);
+    m_sweeper->m_ffthist->Reset(4000);
+    m_sweeper->m_ffthist->Reset(2000);
+}
+
+void MainWindow::onActionPlay()
+{
+    StartSweep(false);
+}
+
+void MainWindow::onActionStop()
+{
+    StopSweep();
+}
+
 void MainWindow::onMarkerSelected(ftmarker *mrk)
 {
 
@@ -188,47 +291,14 @@ void MainWindow::onRangeChanged(QCPRange range)
     m_sweeper->SetViewRange(low,high);
 }
 
-void MainWindow::on_cmdStartStop_clicked()
+void MainWindow::OnFreqHighlight(double freqMHz)
 {
-    if(m_sweeper->IsSweeping()==false)
-    {
-        if(ui->spnFreqLow->value() > ui->spnFreqHigh->value())
-        {
-            QMessageBox::information(this,"Frequency mismatch","Low frequency is greater than high frequency.");
-            return;
-        }
-        //validate to see if low > high (todo)
-        double oneM = 1000000;
-        float bw = (ui->spnFreqHigh->value() - ui->spnFreqLow->value())/2.0;
-        float cf = (ui->spnFreqHigh->value() + ui->spnFreqLow->value())/2.0;
-
-        m_mrk_main.setCF_MHz(cf);
-        m_mrk_main.setBW_MHz(1);
-
-        plotFFT->plot->xAxis->setRange(cf - (bw/2),cf + (bw/2));
-        plotFFT->plot->xAxis2->setRange(cf - (bw/2),cf + (bw/2));
-        plotFFT->plot->update();
-        plotWaterfall->setXRange(cf - (bw/2),cf + (bw/2));
-        plotWaterfall->setRange_dBm(-140,-30);
-        plotWaterfall->plot->update();
-
-        int overlap = ui->sldOverlap->value();
-        m_sweeper->StartSweep(ui->spnFreqLow->value()*oneM,ui->spnFreqHigh->value()*oneM,numbins,overlap);
-        ui->grpSweepFreqControls->setEnabled(false);
-
-    }else
-    {
-        m_sweeper->StopSweep();
-        ui->grpSweepFreqControls->setEnabled(true);
-    }
-    if(m_sweeper->IsSweeping()==false)
-    {
-        ui->cmdStartStop->setText("Start Sweep");
-    }else
-    {
-        ui->cmdStartStop->setText("Stop Sweep");
-    }
+    //format the string
+    QString txt;
+    txt = QString::number(freqMHz,'f',3) + " MHz";
+    ui->actionFrequency->setText(txt);
 }
+
 
 void MainWindow::on_chkFFT_clicked()
 {
@@ -330,4 +400,11 @@ void MainWindow::on_spnFreqHigh_valueChanged(double arg1)
 void MainWindow::on_sldNoiseFloorWidth_valueChanged(int value)
 {
     m_sweeper->m_ffthist->setNoise_floor_binwidth(value);
+}
+
+void MainWindow::on_sldNoiseFloorOffset_valueChanged(int value)
+{
+    double v = value - 50;
+    v /= 10.0;
+    m_sweeper->m_ffthist->setNoise_floor_offset(v);
 }
