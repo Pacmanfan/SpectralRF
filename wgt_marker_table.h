@@ -35,6 +35,7 @@ signals:
     void onMarkerSelected(ftmarker *mrk); // hard select - like a goto or double click
     void onMarkerHighlight(ftmarker *mrk); // soft select - like a table item change
     void onAddMarker();
+    void onRemoveMarker();
     void onExportMarker(ftmarker *mrk);
     void onMerge();
     void onRemoveAllMarkers();

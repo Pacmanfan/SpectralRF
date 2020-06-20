@@ -167,7 +167,7 @@ void wgt_waterfall::Update(FFT_Hist *pFFTHelp, double tlow, double thigh)
     if(nx ==0 || ny ==0)
         return;
 
-    colorMap->data()->setSize(nx, pFFTHelp->MaxRows());//mSWTFFileListDepth); // we want the color map to have nx * ny data points
+    colorMap->data()->setSize(nx, ny);//mSWTFFileListDepth); // we want the color map to have nx * ny data points
 
     float *dp = colorMap->data()->GetDataPtr();
 
@@ -183,9 +183,9 @@ void wgt_waterfall::Update(FFT_Hist *pFFTHelp, double tlow, double thigh)
         upper = waterhigh;
     }
 
-    float *cdat = pFFTHelp->GetRow(0);
-
-    memcpy(dp,cdat,nx*ny*sizeof(float));
+    pFFTHelp->CopyTo(dp);
+    //float *cdat = pFFTHelp->GetRow(0);
+    //memcpy(dp,cdat,nx*ny*sizeof(float));
 
 
     minFreq = pFFTHelp->GetFreqHz(0);

@@ -175,6 +175,7 @@ void wgt_marker_table::on_cmdRemove_clicked()
         ui->wgt_marker_edit->SetMarker(0);
         UpdateButtons();
         UpdateTable();
+        emit(onRemoveMarker());
     }
 }
 

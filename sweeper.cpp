@@ -51,7 +51,6 @@ void Sweeper::Sweep()
 {
     std::complex<float> buff_IQ[m_nBinsPerFFT]; // buffer to hold the IQ samples
     float buff_FFT[m_nBinsPerFFT]; // buffer to hold the FFT data
-
     void *buffs[] = {buff_IQ};
     int flags;
     long long time_ns;
@@ -93,6 +92,12 @@ void Sweeper::Sweep()
 
         fold = fcurrent; //save the old freq
         ret = m_radio->sdr->readStream( m_radio->rx_stream, buffs, m_nBinsPerFFT, flags, time_ns);//get the IQ data
+        if(ret == -1)
+        {
+           // printf("Readstream returned -1 \r\n");
+            continue;
+        }
+
         if(ret < 0)continue; // keep reading on error
 
         m_sweepline->m_timestamp = time_ns;
@@ -103,8 +108,13 @@ void Sweeper::Sweep()
             int hf = (m_nBinsPerFFT >> 1); // find the center bin
             buff_FFT[hf] = ( buff_FFT[hf - 1] + buff_FFT[hf + 1]) * 0.5;
         }
-        // copy the fft data into the appropriate place in the sweeline buffer
-        memcpy(&m_sweepline->m_data[idx],&buff_FFT[bins_diff_half],adj_numbin * sizeof(float));
+
+        int numcopy = adj_numbin;
+        if(idx + adj_numbin > totalsweepbins)
+        {
+            numcopy = totalsweepbins - idx;
+        }
+        memcpy(&m_sweepline->m_data[idx],&buff_FFT[bins_diff_half],numcopy * sizeof(float)); // original
 
         idx += adj_numbin;
         //increment the frequency
@@ -118,7 +128,7 @@ void Sweeper::Sweep()
         {
             fcurrent = fstart;// back to the start
             // set the fft results
-            m_ffthist->AddData(m_sweepline->m_data,totalsweepbins,sweep_cf,sweep_bw);
+            m_ffthist->AddData(m_sweepline->m_data,totalsweepbins,sweep_cf,sweep_bw,m_sweepline->m_timestamp);
             emit(SweepCompleted());//signal line data is ready
             idx = 0; //reset the index
         }
@@ -163,6 +173,11 @@ void Sweeper::EatSamples()
     {
         //read samples
         ret = m_radio->sdr->readStream( m_radio->rx_stream, buffs, sz, flags, time_ns,0); //no timeout
+        if(ret == -1)
+        {
+           // printf("Readstream returned -1 \r\n");
+            continue;
+        }
         if(time_ns !=0)
         {
             int a = 100;

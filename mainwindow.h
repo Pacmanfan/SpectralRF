@@ -10,6 +10,8 @@
 #include <ftmarker.h>
 #define APP_VERSION "1.0.0.0"
 #define APP_NAME "Spectral RF"
+#define SETTINGS_FILE "SpectralRF.ini"
+
 class wgt_marker_table;
 namespace Ui {
 class MainWindow;
@@ -50,6 +52,7 @@ public slots:
     void onMarkerSelected(ftmarker *mrk); // hard select - like a goto or double click
     void onMarkerHighlight(ftmarker *mrk); // soft select - like a table item change
     void onAddMarker();
+    void onRemoveMarker();
     void onRemoveAllMarkers();
     void onRangeChanged(QCPRange range);
     void OnFreqHighlight(double freq);
@@ -71,6 +74,11 @@ private slots:
     void on_spnFreqHigh_valueChanged(double arg1);    
     void on_sldNoiseFloorWidth_valueChanged(int value);
     void on_sldNoiseFloorOffset_valueChanged(int value);
+    void on_chkDetectPeaks_clicked();
+    void on_sldDetectSensitivity_valueChanged(int value);
+    void on_sldOverlap_valueChanged(int value);
+    void on_slddbHigh_sliderMoved(int position);
+    void on_slddblow_valueChanged(int value);
 };
 
 #endif // MAINWINDOW_H

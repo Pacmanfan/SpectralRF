@@ -10,17 +10,26 @@
 #include <iostream>
 #include <radiosettings.h>
 #include <QMessageBox>
+#include <QSettings>
 
 bool showTrace = true;
-int numbins  = 1048;
+#define DEF_NUM_BINS 4096
+int gNumBins = DEF_NUM_BINS;
 #define VIEWTIMERRES 50
-
+bool detectingpeaks = false;
+QString gSettingsFileName;
+QString gMarkersFileName;
+bool loadingsettings = false;
+#define DEFAULT_MARKERS_FILENAME "markers.ini"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    loadingsettings = true; // prevent saving of any settings until the initialization is complete
     ui->setupUi(this);
+    gSettingsFileName = QApplication::applicationDirPath() + "/" + SETTINGS_FILE;
+    gMarkersFileName =  QApplication::applicationDirPath() + "/" + DEFAULT_MARKERS_FILENAME;
     setWindowTitle(QString(APP_NAME) + " " + QString(APP_VERSION));
     setWindowState(Qt::WindowState::WindowMaximized);
     plotFFT = ui->wgtfft;
@@ -29,10 +38,12 @@ MainWindow::MainWindow(QWidget *parent) :
     //marker setup
     markerstable = ui->wgtMarkers;
     m_markers = new freq_markers(this);
+    m_markers->Load(gMarkersFileName.toLatin1().data());
     markerstable->SetMarkers(m_markers);
     plotFFT->AddTuner(&m_mrk_main);
     plotWaterfall->AddTuner(&m_mrk_main);
     connect(markerstable,SIGNAL(onAddMarker()),this,SLOT(onAddMarker()));
+    connect(markerstable,SIGNAL(onRemoveMarker()),this,SLOT(onRemoveMarker()));
     connect(markerstable,SIGNAL(onRemoveAllMarkers()),this,SLOT(onRemoveAllMarkers()));
     connect(markerstable,SIGNAL(onMarkerHighlight(ftmarker*)),this,SLOT(onMarkerHighlight(ftmarker*)));
     connect(markerstable,SIGNAL(onMarkerSelected(ftmarker*)),this,SLOT(onMarkerSelected(ftmarker*)));
@@ -66,12 +77,14 @@ MainWindow::MainWindow(QWidget *parent) :
     float bw = 100;
     plotFFT->plot->xAxis->setRange(cf - (bw/2),cf + (bw/2)); // bottom
     plotFFT->plot->xAxis2->setRange(cf - (bw/2),cf + (bw/2)); // top
+    plotFFT->setAutorange(false);
+
 /* //catch out of bounds stuff
     connect(plotFFT->plot->xAxis, SIGNAL(rangeChanged(QCPRange)), this,SLOT(FFTrangeChanged(QCPRange)));
     connect(plotWaterfall->plot->xAxis, SIGNAL(rangeChanged(QCPRange)), this,SLOT(FFTrangeChanged(QCPRange)));
 */
     plotWaterfall->setXRange(cf - (bw/2),cf + (bw/2));
-    plotWaterfall->setAutorange(true);
+    plotWaterfall->setAutorange(false);
     plotWaterfall->setWaterfallDirection(true);
 
     //start off with the markers table widget not visible
@@ -81,8 +94,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionRecord,SIGNAL(triggered(bool)),this,SLOT(onActionRecord()));
     connect(ui->actionPlay,SIGNAL(triggered(bool)),this,SLOT(onActionPlay()));
     connect(ui->actionStop,SIGNAL(triggered(bool)),this,SLOT(onActionStop()));
-    on_sldBins_valueChanged(ui->sldBins->value());
+    //on_sldBins_valueChanged(DEF_NUM_BINS);
     SetupToolBar();
+
+    float lower = ui->slddblow->value();
+    float upper = ui->slddbHigh->value();
+    plotFFT->setRangeY(lower,upper);
+    plotWaterfall->setRange_dBm(lower,upper);
+
     LoadSettings();
     ui->actionRecord->setEnabled(true);
     ui->actionPlay->setEnabled(true);
@@ -123,14 +142,55 @@ void MainWindow::SetupGUIforRadio()
     ui->chkAGC->setChecked(autogain);
 
 }
+int gtest = 0;
 void MainWindow::LoadSettings()
 {
+    loadingsettings = true;
+    QSettings settings(gSettingsFileName, QSettings::NativeFormat);
+    /*
+    bool parsed = false;
+    int t = settings.value("testsetting", 1).toInt(parsed);
+    if(parsed)
+        gtest=t;
 
+*/
+    ui->spnFreqLow->setValue(settings.value("FreqSweepLow", 800).toDouble());
+    ui->spnFreqHigh->setValue(settings.value("FreqSweepHigh", 900).toDouble());
+    bool bval = settings.value("DetectPeaks",false).toBool();
+    ui->chkDetectPeaks->setChecked(bval);
+    ui->sldNoiseFloorOffset->setValue(settings.value("sldNoiseFloorOffset",ui->sldNoiseFloorOffset->value()).toInt());
+    ui->sldNoiseFloorWidth->setValue(settings.value("sldNoiseFloorWidth",ui->sldNoiseFloorWidth->value()).toInt());
+    ui->sldDetectSensitivity->setValue(settings.value("sldDetectSensitivity",ui->sldDetectSensitivity->value()).toInt());
+    ui->sldOverlap->setValue(settings.value("sldOverlap",ui->sldOverlap->value()).toInt());
+    ui->sldGain->setValue(settings.value("sldGain",ui->sldGain->value()).toInt());
+    ui->slddblow->setValue(settings.value("slddblow",ui->slddblow->value()).toInt());
+    ui->slddbHigh->setValue(settings.value("slddbHigh",ui->slddbHigh->value()).toInt());
+
+
+    int sldbin = settings.value("NumBins",ui->sldBins->value()).toInt();
+    on_sldBins_valueChanged(sldbin);
+
+    loadingsettings = false;
 }
 
 void MainWindow::SaveSettings()
 {
+    if(loadingsettings == true)
+        return;
+    QSettings settings(gSettingsFileName, QSettings::NativeFormat);
 
+    settings.setValue("FreqSweepLow", ui->spnFreqLow->value());
+    settings.setValue("FreqSweepHigh", ui->spnFreqHigh->value());
+    settings.setValue("NumBins",ui->sldBins->value());
+    settings.setValue("DetectPeaks",ui->chkDetectPeaks->isChecked());
+    settings.setValue("sldNoiseFloorOffset",ui->sldNoiseFloorOffset->value());
+    settings.setValue("sldNoiseFloorWidth",ui->sldNoiseFloorWidth->value());
+    settings.setValue("sldDetectSensitivity",ui->sldDetectSensitivity->value());
+    settings.setValue("sldOverlap",ui->sldOverlap->value());
+    settings.setValue("slddblow",ui->slddblow->value());
+    settings.setValue("slddbHigh",ui->slddbHigh->value());
+
+    //settings.setValue("testsetting",2)
 }
 
 void MainWindow::StartSweep(bool record)
@@ -158,7 +218,7 @@ void MainWindow::StartSweep(bool record)
         plotWaterfall->plot->update();
 
         int overlap = ui->sldOverlap->value();
-        m_sweeper->StartSweep(ui->spnFreqLow->value()*oneM,ui->spnFreqHigh->value()*oneM,numbins,overlap);
+        m_sweeper->StartSweep(ui->spnFreqLow->value()*oneM,ui->spnFreqHigh->value()*oneM,gNumBins,overlap);
 
     }
     if(m_sweeper->IsSweeping()==true)
@@ -200,7 +260,22 @@ void MainWindow::onViewTimer()
 {
     if(m_sweeper->IsSweeping() == false)
         return;
+
+    QMap<int,float> peaks;
+    if(detectingpeaks)
+    {
+        float v = ui->sldDetectSensitivity->value();
+        v /= 100.0;
+       // v=3.25;
+        peaks = m_sweeper->m_ffthist->DetectPeaks(v);
+        if(peaks.count() > 0)
+        {
+            //printf("%d peaks\r\n",peaks.count());
+        }
+        //now, display the peaks on the fft graph
+    }
     //update the waterfall / fft views
+
     plotWaterfall->Update(m_sweeper->m_ffthist,0,256);
     plotWaterfall->plot->replot();
 
@@ -211,16 +286,7 @@ void MainWindow::onViewTimer()
 
 void MainWindow::onSweepLineCompleted()
 {
-    /*
-    if(m_sweeper->IsSweeping() == false)
-        return;
-    //update the waterfall / fft views
-    plotWaterfall->Update(m_sweeper->m_ffthist,0,256);
-    plotWaterfall->plot->replot();
 
-    plotFFT->UpdateFFT(m_sweeper->m_ffthist);
-    plotFFT->plot->replot();
-    */
 }
 
 void MainWindow::onActionRadioMenu()
@@ -265,7 +331,9 @@ void MainWindow::onMarkerHighlight(ftmarker *mrk)
 {
 
 }
-
+/*
+This is triggered when the markers table adds a new marker
+*/
 void MainWindow::onAddMarker()
 {
     //create a new marker, add it to the markers table
@@ -277,11 +345,20 @@ void MainWindow::onAddMarker()
     mrk->setHasStartTime(false);
     m_markers->AddMarker(mrk);
     plotWaterfall->AddMarker(mrk);
+    m_markers->Save(gMarkersFileName.toLatin1().data());
 }
 
+void MainWindow::onRemoveMarker()
+{
+    m_markers->Save(gMarkersFileName.toLatin1().data());
+}
+
+//This is recieved from a signla from the markers table,
+//indicating all the markers have been removed
 void MainWindow::onRemoveAllMarkers()
 {
     plotWaterfall->ClearMarkers();
+    m_markers->Save(gMarkersFileName.toLatin1().data());
 }
 
 void MainWindow::onRangeChanged(QCPRange range)
@@ -303,16 +380,19 @@ void MainWindow::OnFreqHighlight(double freqMHz)
 void MainWindow::on_chkFFT_clicked()
 {
     ui->wgtfft->setVisible(ui->chkFFT->isChecked());
+    SaveSettings();
 }
 
 void MainWindow::on_chkWaterfall_clicked()
 {
     ui->wgtwaterfall->setVisible(ui->chkWaterfall->isChecked());
+    SaveSettings();
 }
 
 void MainWindow::on_chkMarkers_clicked()
 {
      ui->wgtMarkers->setVisible(ui->chkMarkers->isChecked());
+     SaveSettings();
 }
 
 void MainWindow::on_chkShowMax_clicked()
@@ -323,6 +403,7 @@ void MainWindow::on_chkShowMax_clicked()
     {
         maxgraph->setVisible(showTrace);
     }
+    SaveSettings();
 }
 
 void MainWindow::on_cmdClearMax_clicked()
@@ -336,6 +417,7 @@ void MainWindow::on_sldAverage_valueChanged(int value)
     double val = value;
     val /= 1000;
     m_sweeper->m_ffthist->SetAlpha(val);
+    SaveSettings();
 }
 
 void MainWindow::on_cmbGain_currentIndexChanged(int index)
@@ -348,6 +430,7 @@ void MainWindow::on_cmbGain_currentIndexChanged(int index)
     ui->sldGain->setMinimum(grange.minimum());
     ui->sldGain->setMaximum(grange.maximum());
     ui->sldGain->setValue(gain);
+    SaveSettings();
 }
 
 void MainWindow::on_sldGain_valueChanged(int value)
@@ -359,6 +442,7 @@ void MainWindow::on_sldGain_valueChanged(int value)
     if(idx == -1)
         return;
     dev->sdr->setGain(SOAPY_SDR_RX,idx,value);
+    SaveSettings();
 }
 
 void MainWindow::on_chkAGC_clicked()
@@ -368,38 +452,42 @@ void MainWindow::on_chkAGC_clicked()
     if(!dev)
         return;
     dev->sdr->setGainMode(SOAPY_SDR_RX,0,val);
+    SaveSettings();
 }
 
 void MainWindow::on_sldBins_valueChanged(int value)
 {
-    numbins = 2<<value;
+    gNumBins = 2<<value;
     SDR_Device * dev = m_sweeper->m_radio;
     if(!dev)
         return;
-    double rbw = dev->m_BW_Hz / (double)numbins;
+    double rbw = dev->m_BW_Hz / (double)gNumBins;
 
-    ui->lblBins->setText("Bins / FFT: " + QString::number(numbins));
+    ui->lblBins->setText("Bins / FFT: " + QString::number(gNumBins));
     ui->lblRBW->setText("Res. BW: " + QString::number(rbw,'f',2) + " Hz");
     float bw = (ui->spnFreqHigh->value() - ui->spnFreqLow->value())/2.0;;
     double binsperscan = (bw*1000000) / rbw;
     ui->lblBinperscan->setText("Bins per scan: " + QString::number((int)binsperscan));
-
+    SaveSettings();
 }
 
 void MainWindow::on_spnFreqLow_valueChanged(double arg1)
 {
     on_sldBins_valueChanged(ui->sldBins->value());
+    SaveSettings();
 }
 
 void MainWindow::on_spnFreqHigh_valueChanged(double arg1)
 {
     on_sldBins_valueChanged(ui->sldBins->value());
+    SaveSettings();
 }
 
 
 void MainWindow::on_sldNoiseFloorWidth_valueChanged(int value)
 {
     m_sweeper->m_ffthist->setNoise_floor_binwidth(value);
+    SaveSettings();
 }
 
 void MainWindow::on_sldNoiseFloorOffset_valueChanged(int value)
@@ -407,4 +495,41 @@ void MainWindow::on_sldNoiseFloorOffset_valueChanged(int value)
     double v = value - 50;
     v /= 10.0;
     m_sweeper->m_ffthist->setNoise_floor_offset(v);
+    SaveSettings();
+}
+
+void MainWindow::on_chkDetectPeaks_clicked()
+{
+    detectingpeaks = ui->chkDetectPeaks->isChecked();
+    SaveSettings();
+}
+
+void MainWindow::on_sldDetectSensitivity_valueChanged(int value)
+{
+    SaveSettings();
+}
+
+void MainWindow::on_sldOverlap_valueChanged(int value)
+{
+     SaveSettings();
+}
+
+void MainWindow::on_slddbHigh_sliderMoved(int position)
+{
+    //set the dbm high position for the fft and the waterfall
+    float lower = ui->slddblow->value();
+    float upper = ui->slddbHigh->value();
+    plotFFT->setRangeY(lower,upper);
+    plotWaterfall->setRange_dBm(lower,upper);
+    SaveSettings();
+}
+
+void MainWindow::on_slddblow_valueChanged(int value)
+{
+    //set the dbm high position for the fft and the waterfall
+    float lower = ui->slddblow->value();
+    float upper = ui->slddbHigh->value();
+    plotFFT->setRangeY(lower,upper);
+    plotWaterfall->setRange_dBm(lower,upper);
+    SaveSettings();
 }

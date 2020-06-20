@@ -25109,7 +25109,10 @@ void QCPColorMapData::setSize(int keySize, int valueSize)
       mData = new float[mKeySize*mValueSize];
 
 #ifdef __EXCEPTIONS
-      } catch (...) { mData = 0; }
+      } catch (...)
+        {
+            mData = 0;
+        }
 #endif
       if (mData)
         fill(0);

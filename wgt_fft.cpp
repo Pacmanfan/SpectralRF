@@ -112,6 +112,22 @@ void wgt_FFT::AddTuner(ftmarker *tunermarker)
 
 }
 
+void wgt_FFT::RemoveTuner(ftmarker *tunermarker)
+{
+    // iterate through all and remove
+    int idx = -1;
+    for(int c= 0; c < m_tuners_gui.size(); c++)
+    {
+        if(tunermarker == m_tuners_gui[c]->m_tunermarker)
+        {
+            idx = c;
+            break;
+        }
+    }
+    if(idx != -1)
+        m_tuners_gui.remove(idx);
+}
+
 
 void wgt_FFT::OnMouseReleaseFFT(QMouseEvent *evt)
 {
@@ -328,29 +344,6 @@ void wgt_FFT::UpdateFFT(FFT_Hist *pFFTHelp)
         yaxfreqMhz /= 1000000.0; // convert from Hz to Mhz
         freqs[c] = yaxfreqMhz;
         datanoisefloor[c] = noisefloor[c];
-        /*
-        //for the 'data' / yellow grpah, we're implementing a LPF (sorta) of the average data
-        if(c == 0)
-        {
-            datanoisefloor[c] = avdat[c]*.75 + avdat[c+1]*.15 + avdat[c+2]*.10;
-        }else if (c == 1)
-        {
-            datanoisefloor[c] = avdat[c-1]*.2 + avdat[c]*.55 + avdat[c+1]*15 + avdat[c+2]*.10;
-        }
-        else if (c == pFFTHelp->GetBinSize() - 1)
-        {
-            datanoisefloor[c] = (avdat[c-2]*.10 + avdat[c-1]*.15 +avdat[c]*.75);
-        }
-        else if (c == pFFTHelp->GetBinSize() - 2)
-        {
-            datanoisefloor[c] = (avdat[c-2]*.10 + avdat[c-1]*.15 +avdat[c]*.55 +  avdat[c+1]*.2 );
-        }else
-        {
-            //data[c] = (avdat[c] + avdat[c-1] + avdat[c+1]) / 3;
-            datanoisefloor[c] = (avdat[c-2]*.20 + avdat[c-1]*.2 +avdat[c]*.2 +  avdat[c+1]*.2 + avdat[c+2] *.2);
-        }
-        */
-       // data[c] = rowdat[c];
         dataMax[c] = maxdat[c];
         if(showAvg)
         {
@@ -382,7 +375,7 @@ void wgt_FFT::UpdateFFT(FFT_Hist *pFFTHelp)
     double lower = -140;
     double upper = -30;
 
-    autorange = true;
+    //autorange = true;
     if(autorange)
     {
         //get the right max val

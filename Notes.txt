@@ -21,6 +21,12 @@ Cache to memory?
         freq min/max
         sample rate min/max
 
+Sweep Settings Page?
+    % overlap
+    Radio Bandwidth
+    Settle Time
+
+
 *Radio control widget
 *    Set antennae
 *    Set Gain (RF/LNA/etc)
@@ -41,13 +47,24 @@ Display settings:
 *Tracer
 
 *Toolbar
-Add version number
+*Add version number
 *Show Frequency on toolbar
+
 Record FFT sweeps to disk
+    Autoname /manual name
+
 Convert FFT sweeps to images
     Color options
 
 Save / Load Markers
+    Auto File Name?
+
+*Settings file
+    Save Radio Settings
+        Gain / AGC
+        Antennae
+    Last Marker File
+    Ask / autoname
 
 Signal detection
     peak detection
