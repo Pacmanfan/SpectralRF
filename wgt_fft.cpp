@@ -17,7 +17,6 @@ wgt_FFT::~wgt_FFT()
 
 void wgt_FFT::Initialize()
 {
-
     autorange = true;
     plot = ui->plotFFT;//
 
@@ -42,8 +41,6 @@ void wgt_FFT::Initialize()
     QCPGraph *graph = AddGraph(FFT_GRAPH_NAME,plot->xAxis2,Qt::yellow);  // instantaneous  power
     AddGraph(FFT_MAX_GRAPH_NAME,Qt::red);// max power
     QCPGraph *avgraph  = AddGraph(FFT_AVG_GRAPH_NAME,Qt::green);// average power
-
-
 
     // make left and bottom axes always transfer their ranges to right and top axes:
     connect(plot->xAxis, SIGNAL(rangeChanged(QCPRange)), plot->xAxis2, SLOT(setRange(QCPRange)));
@@ -83,8 +80,6 @@ void wgt_FFT::Initialize()
     _FFTTracer->setPen(QPen(colphase));   //DOT color
     _FFTTracer->setBrush(colphase);
     _FFTTracer->setSize(7);
-
-
 }
 
 bool wgt_FFT::getAutorange() const
@@ -97,8 +92,6 @@ void wgt_FFT::setAutorange(bool value)
     autorange = value;
 }
 
-
-
 void wgt_FFT::setRangeY(double low, double high)
 {
     rangelowY = low;
@@ -110,6 +103,13 @@ void wgt_FFT::AddTuner(ftmarker *tunermarker)
     sigtuner_GUI *stg = new sigtuner_GUI(tunermarker,plot);
     m_tuners_gui.append(stg); // add it to the list for safekeeping
 
+}
+
+void wgt_FFT::AddMainTuner(ftmarker *maintuner)
+{
+    m_maintuner = maintuner;
+    sigtuner_GUI *stg = new sigtuner_GUI(maintuner,plot);
+    m_tuners_gui.append(stg); // add it to the list for safekeeping
 }
 
 void wgt_FFT::RemoveTuner(ftmarker *tunermarker)
@@ -125,7 +125,23 @@ void wgt_FFT::RemoveTuner(ftmarker *tunermarker)
         }
     }
     if(idx != -1)
+    {
+        sigtuner_GUI *stg = m_tuners_gui[idx];
         m_tuners_gui.remove(idx);
+        stg->SetVisible(false);
+        delete stg;
+    }
+}
+
+void wgt_FFT::setMarkers(freq_markers *markers)
+{
+    m_markers = markers;
+    connect(m_markers,SIGNAL(MarkerAdded(ftmarker*)),this,SLOT(onMarkerAdded(ftmarker*)));
+    connect(m_markers,SIGNAL(MarkerChanged(ftmarker*)),this,SLOT(onMarkerChanged(ftmarker*)));
+    connect(m_markers,SIGNAL(MarkerRemoved(ftmarker*)),this,SLOT(onMarkerRemoved(ftmarker*)));
+    connect(m_markers,SIGNAL(MarkersAdded(QVector<ftmarker*>)),this,SLOT(onMarkersAdded(QVector<ftmarker*>)));
+    connect(m_markers,SIGNAL(MarkersCleared()),this,SLOT(onMarkersCleared()));
+    connect(m_markers,SIGNAL(MarkerSelected(ftmarker*)),this,SLOT(onMarkerSelected(ftmarker*)));
 }
 
 
@@ -143,6 +159,46 @@ void wgt_FFT::OnMouseReleaseFFT(QMouseEvent *evt)
         stg->highFreqLineFFT->setSelected(false);
     }
 
+}
+
+void wgt_FFT::onMarkerChanged(ftmarker *mrk)
+{
+    // I think this is handled by the sigtuner_gui listening to the individual bound marker
+}
+
+void wgt_FFT::onMarkerAdded(ftmarker *mrk)
+{
+    AddTuner(mrk);
+}
+
+void wgt_FFT::onMarkersAdded(QVector<ftmarker *> markers)
+{
+    for(int c = 0; c < markers.size(); c++)
+        AddTuner(markers[c]);
+}
+
+void wgt_FFT::onMarkerRemoved(ftmarker *mrk)
+{
+    RemoveTuner(mrk);
+}
+
+void wgt_FFT::onMarkersCleared()
+{
+    // remove all the markers
+    for(int c = 0 ; c < m_tuners_gui.size(); c++)
+    {
+        sigtuner_GUI *stg = m_tuners_gui[c];
+        delete stg;
+    }
+    m_tuners_gui.clear();
+    AddMainTuner(m_maintuner);
+    //m_tuners_gui.append(m_maintuner); // put the main tuner back in
+
+}
+
+void wgt_FFT::onMarkerSelected(ftmarker *mrk)
+{
+    //show the marker as selected
 }
 
 void wgt_FFT::OnMouseMoveFFT(QMouseEvent *evt)

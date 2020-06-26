@@ -56,5 +56,6 @@ bool ftmarker_GUI::IsVisible()
 
 void ftmarker_GUI::OnMarkerChanged(ftmarker *mrk)
 {
+    SetVisible(mrk->visible());
     SetupRect();
 }

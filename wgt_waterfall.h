@@ -31,9 +31,6 @@ public:
     bool autorange; // automatically scale to fit the data on screen in the Y axis
     bool ctrlpressed;
     double waterhigh,waterlow; // when NOT autoranging, use the set values
-    void AddMarker(ftmarker *ftm);
-    void RemoveMarker(ftmarker *ftm);
-    void ClearMarkers();// remove all GUI markers
     void SetControlsVisible(bool val);
     bool getAutorange() const;
     void setAutorange(bool value);
@@ -46,12 +43,14 @@ public:
     void SetMarkersSelected(QVector<ftmarker *> markers);
     ftmarker *GetCurSel(){return m_rectselect;}
     bool HasSelection(){return m_selector->IsVisible();}
+    void setMarkers(freq_markers *markers);
+
 private:
     Ui::wgt_waterfall *ui;
     bool eventFilter(QObject *obj, QEvent *event);
     QVector<sigtuner_GUI *> m_tuners_gui;
     QVector<ftmarker_GUI *> m_markers_gui;
-    freq_markers m_markers; // copy of the freq markers so we can select from them
+    freq_markers *m_markers; // pointer to the freq markers so we can select from them
     ftmarker_GUI *m_selector; // the rectangular selector
     ftmarker *m_rectselect;
     double lowfreq,highfreq;
@@ -63,13 +62,20 @@ private slots:
     void OnMouseDoubleClick(QMouseEvent *evt);
     void onitemDoubleClick(QCPAbstractItem *item ,QMouseEvent *ev); // single marker selection on double click
     void onitemClick(QCPAbstractItem *item ,QMouseEvent *ev); // single marker selection on double click
+
+    void onMarkerChanged(ftmarker *mrk);
+    void onMarkerAdded(ftmarker *mrk);
+    void onMarkersAdded(QVector<ftmarker *> markers); // signal that a group of markers were added
+    void onMarkerRemoved(ftmarker *mrk);
+    void onMarkersCleared(); // all markers removed
+    void onMarkerSelected(ftmarker *mrk);
 signals:
     void OnFreqHighlight(double freq);
     void OnTimeHighlight(double timestamp);
     void Pan(double val);
-    void OnMarkersSelected(QVector<ftmarker *> markers);
-    void OnMarkerSelected(ftmarker *marker,bool softsel);
-    void OnDeleteCurrentMarker();
+   // void OnMarkersSelected(QVector<ftmarker *> markers);
+    //void OnMarkerSelected(ftmarker *marker,bool softsel);
+    //void OnDeleteCurrentMarker();
 
 };
 

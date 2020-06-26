@@ -99,36 +99,6 @@
         <normaloff>:/icons/minus</normaloff>:/icons/minus</iconset>
       </property>
      </widget>
-     <widget class="QPushButton" name="cmdGoto">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>100</y>
-        <width>85</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Go To</string>
-      </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>icons/forward_arrow.png</normaloff>icons/forward_arrow.png</iconset>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="cmdExport">
-      <property name="geometry">
-       <rect>
-        <x>120</x>
-        <y>100</y>
-        <width>85</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Export</string>
-      </property>
-     </widget>
      <widget class="QPushButton" name="cmdRemoveAll">
       <property name="geometry">
        <rect>
@@ -159,13 +129,39 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>140</y>
+        <y>180</y>
         <width>184</width>
         <height>27</height>
        </rect>
       </property>
       <property name="text">
        <string>Direction Find</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="cmdLoadMarkers">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>100</y>
+        <width>184</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Load Markers</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="cmdSaveMarkers">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>140</y>
+        <width>184</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Save Markers</string>
       </property>
      </widget>
     </widget>
@@ -177,6 +173,12 @@
        <horstretch>2</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <family>Courier 10 Pitch</family>
+       <pointsize>11</pointsize>
+      </font>
      </property>
      <property name="alternatingRowColors">
       <bool>true</bool>

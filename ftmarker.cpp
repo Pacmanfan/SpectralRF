@@ -216,6 +216,18 @@ void ftmarker::RestoreSignal(bool signalnow)
         Signal();
 }
 
+bool ftmarker::visible() const
+{
+    return m_visible;
+}
+
+void ftmarker::setVisible(bool visible)
+{
+    m_visible = visible;
+    if(!m_surpress)
+        emit(MarkerChanged(this));
+}
+
 void ftmarker::Signal()
 {
     if(!m_surpress)
@@ -231,7 +243,7 @@ void freq_markers::Load(QSettings *settings)
         settings->setArrayIndex(c);
         ftmarker *fm = new ftmarker();
         fm->Load(settings);
-        m_markers.push_back(fm);
+        AddMarker(fm);
     }
     settings->endArray();
 }
@@ -249,10 +261,22 @@ void freq_markers::Save(QSettings *settings)
     settings->endArray();
 }
 
-
+/*
+Signal received from individual marker and rebroadcast to listeners
+*/
 void freq_markers::OnMarkerChanged(ftmarker *mrk)
 {
     emit(MarkerChanged(mrk)); // signal to whoever is listening
+}
+
+QString freq_markers::filename() const
+{
+    return m_filename;
+}
+
+void freq_markers::setFilename(const QString &filename)
+{
+    m_filename = filename;
 }
 
 freq_markers::freq_markers(QObject *parent)
@@ -260,16 +284,17 @@ freq_markers::freq_markers(QObject *parent)
     Q_UNUSED(parent);
 }
 
-bool freq_markers::Load(char *fname)
+bool freq_markers::Load()
 {
-    QSettings settings(fname);
+    QSettings settings(m_filename);
     Load(&settings);
+    emit(MarkersAdded(m_markers));
     return true;
 }
 
-bool freq_markers::Save(char *fname)
+bool freq_markers::Save()
 {
-    QSettings settings(fname);
+    QSettings settings(m_filename);
     Save(&settings);
     return true;
 }
@@ -279,7 +304,7 @@ void freq_markers::AddMarker(ftmarker * mrk)
 {
     m_markers.append(mrk);
     connect(mrk,SIGNAL(MarkerChanged(ftmarker*)),this,SLOT(OnMarkerChanged(ftmarker*)));
-    //emit(MarkerChanged(mrk));  // both?
+    Save();
     emit(MarkerAdded(mrk));
 }
 
@@ -291,6 +316,7 @@ void freq_markers::AddMarkers(QVector<ftmarker *> markers)
         ftmarker * mrk = markers.at(c);
         connect(mrk,SIGNAL(MarkerChanged(ftmarker*)),this,SLOT(OnMarkerChanged(ftmarker*)));
     }
+    Save();
     emit(MarkersAdded(markers));
 }
 
@@ -301,23 +327,34 @@ void freq_markers::RemoveMarker(ftmarker *mrk)
     if(idx == -1)
         return;
     m_markers.remove(idx);
-    //m_markers.removeOne(mrk);
     disconnect(mrk,SIGNAL(MarkerChanged(ftmarker*)),this,SLOT(OnMarkerChanged(ftmarker*)));
+    Save();
     emit(MarkerRemoved(mrk));
 }
 
+/*
+Clear all markers
+*/
 void freq_markers::Clear()
 {
     m_markers.clear();
-   // emit(MarkerRemoved(0)); // all markers removed
+    emit(MarkersCleared());
+}
+
+/*
+We may want a hard/soft select in the future
+*/
+void freq_markers::Select(ftmarker *mrk)
+{
+    // I'm not sure if we actually need to hold the selected marker pointer,
+    // I think it may simply be enough to broadcast the signal of the selected marker
+    // to other listeners
+    emit(MarkerSelected(mrk));
 }
 
 
 bool valueInRange(float value, float min, float max)
 {
-  //  if(max < min)
-  //      printf("damn\r\n");
-
     return (value >= min) && (value <= max);
 }
 

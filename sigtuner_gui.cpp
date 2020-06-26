@@ -20,11 +20,19 @@ void sigtuner_GUI::SetupLine(QCPItemStraightLine* line, float xv, QColor color)
     line->setSelectable(true);
 }
 
+void sigtuner_GUI::SetVisible(bool visible)
+{
+    lowFreqLineFFT->setVisible(visible);
+    highFreqLineFFT->setVisible(visible);
+    CenterFreqLineFFT->setVisible(visible);
+}
+
 void sigtuner_GUI::OnMarkerChanged(ftmarker *mrk)
 {
     SetupLine(CenterFreqLineFFT,mrk->CF_MHz(),Qt::yellow);
     SetupLine(lowFreqLineFFT,mrk->FreqLowMHz(),Qt::green);
     SetupLine(highFreqLineFFT,mrk->FreqHighMHz(),Qt::green);
+    SetVisible(mrk->visible());
 }
 
 sigtuner_GUI::sigtuner_GUI(ftmarker *tunermarker, QCustomPlot *ParentPlot)

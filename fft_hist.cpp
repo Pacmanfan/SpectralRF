@@ -152,9 +152,11 @@ void FFT_Hist::AddData(float *fft, int numbins, float centerfreq,float SPS, long
 
     //increment the m_curidx
     m_curidx++;
-    if(m_curidx >= MAX_FFT_ROWS)
-        m_curidx = 0; // roll over
+    if(m_curidx == MAX_FFT_ROWS)
+        m_curidx = -1; // roll over
 
+   // cout << m_curidx << "\r\n";
+  //  printf("curidx %d\r\n",m_curidx);
     int rowsz = m_binsize * sizeof(float);    // size of 1 row in bytes
     //copy the fft data into the specified row
     memcpy(&m_alldat[m_binsize * m_curidx],fft,rowsz);
@@ -178,8 +180,8 @@ void FFT_Hist::CopyTo(float * dest) // copy the entire m_alldat to the specified
 
     //let's do this row by row..
     int sourcerow = m_curidx;
-    if(sourcerow == 256)
-        return;
+    //if(sourcerow == 256)
+   //     return;
     for(int c = 0 ; c < MAX_FFT_ROWS; c++)
     {
         float * src;
@@ -208,12 +210,6 @@ void FFT_Hist::CalcMinMax(float *vals)
         {
             m_minvalues[x] = vals[x];
         }
-        /*
-        if(vals[x] > m_avg_max)
-        {
-            m_avg_max = vals[x];
-        }
-        */
     }
 }
 

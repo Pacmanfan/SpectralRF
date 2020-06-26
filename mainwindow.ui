@@ -38,6 +38,11 @@
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QTabWidget" name="tabWidget">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
          <property name="currentIndex">
           <number>2</number>
          </property>
@@ -578,7 +583,7 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                  <item>
                   <widget class="QLabel" name="lblNoieFloorOffset">
                    <property name="text">
-                    <string>Noise Floor Offset (-5db - &gt; 5db)</string>
+                    <string>Noise Floor Offset (-5 - &gt; 5)db</string>
                    </property>
                   </widget>
                  </item>
@@ -882,6 +887,94 @@ QDoubleSpinBox::down-button { width: 32px; }</string>
                      </widget>
                     </item>
                    </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="wgtWaterfallScheme" native="true">
+                <layout class="QHBoxLayout" name="horizontalLayout_9">
+                 <item>
+                  <widget class="QLabel" name="lblwaterfallcolorscheme">
+                   <property name="text">
+                    <string>Color Scheme</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="cmbWaterfallScheme">
+                   <property name="font">
+                    <font>
+                     <pointsize>10</pointsize>
+                     <weight>50</weight>
+                     <italic>false</italic>
+                     <bold>false</bold>
+                    </font>
+                   </property>
+                   <property name="currentIndex">
+                    <number>9</number>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string>Grayscale</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Hot</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Cold</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Night</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Candy</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Geography</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Ion</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Thermal</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Polar</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Spectrum</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Jet</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Hues</string>
+                    </property>
+                   </item>
                   </widget>
                  </item>
                 </layout>

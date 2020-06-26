@@ -11,6 +11,7 @@
 #include <radiosettings.h>
 #include <QMessageBox>
 #include <QSettings>
+#include <QFileDialog>
 
 bool showTrace = true;
 #define DEF_NUM_BINS 4096
@@ -18,9 +19,11 @@ int gNumBins = DEF_NUM_BINS;
 #define VIEWTIMERRES 50
 bool detectingpeaks = false;
 QString gSettingsFileName;
-QString gMarkersFileName;
+//QString gMarkersFileName;
 bool loadingsettings = false;
-#define DEFAULT_MARKERS_FILENAME "markers.ini"
+
+
+#define DEFAULT_MARKERS_FILENAME "markers.mrk"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -29,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent) :
     loadingsettings = true; // prevent saving of any settings until the initialization is complete
     ui->setupUi(this);
     gSettingsFileName = QApplication::applicationDirPath() + "/" + SETTINGS_FILE;
-    gMarkersFileName =  QApplication::applicationDirPath() + "/" + DEFAULT_MARKERS_FILENAME;
+    //gMarkersFileName =  QApplication::applicationDirPath() + "/" + DEFAULT_MARKERS_FILENAME;
     setWindowTitle(QString(APP_NAME) + " " + QString(APP_VERSION));
     setWindowState(Qt::WindowState::WindowMaximized);
     plotFFT = ui->wgtfft;
@@ -37,16 +40,20 @@ MainWindow::MainWindow(QWidget *parent) :
     m_sweeper = new Sweeper(this);
     //marker setup
     markerstable = ui->wgtMarkers;
-    m_markers = new freq_markers(this);
-    m_markers->Load(gMarkersFileName.toLatin1().data());
-    markerstable->SetMarkers(m_markers);
-    plotFFT->AddTuner(&m_mrk_main);
+    m_markers = new freq_markers(this);// create new markers
+
+    markerstable->SetMarkers(m_markers); // set the pointer to the markers on the markers table
+    plotWaterfall->setMarkers(m_markers); // set the markers to the waterfall
+    plotFFT->setMarkers(m_markers);
+    m_markers->setFilename(QApplication::applicationDirPath() + "/" + DEFAULT_MARKERS_FILENAME);
+
+
+    plotFFT->AddMainTuner(&m_mrk_main); // so it doesn't get wiped
     plotWaterfall->AddTuner(&m_mrk_main);
+
     connect(markerstable,SIGNAL(onAddMarker()),this,SLOT(onAddMarker()));
-    connect(markerstable,SIGNAL(onRemoveMarker()),this,SLOT(onRemoveMarker()));
-    connect(markerstable,SIGNAL(onRemoveAllMarkers()),this,SLOT(onRemoveAllMarkers()));
-    connect(markerstable,SIGNAL(onMarkerHighlight(ftmarker*)),this,SLOT(onMarkerHighlight(ftmarker*)));
-    connect(markerstable,SIGNAL(onMarkerSelected(ftmarker*)),this,SLOT(onMarkerSelected(ftmarker*)));
+    connect(markerstable,SIGNAL(onLoadMarkers()),this,SLOT(onLoadMarkers()));
+    connect(markerstable,SIGNAL(onSaveMarkers()),this,SLOT(onSaveMarkers()));
 
     //create  new radio device manager
     m_radios = new SDR_Device_Manager();
@@ -102,10 +109,12 @@ MainWindow::MainWindow(QWidget *parent) :
     plotFFT->setRangeY(lower,upper);
     plotWaterfall->setRange_dBm(lower,upper);
 
-    LoadSettings();
+    LoadSettings(); // markers loaded here
     ui->actionRecord->setEnabled(true);
     ui->actionPlay->setEnabled(true);
     ui->actionStop->setEnabled(false);
+    m_signaldetector = new SignalDetector();
+    m_signaldetector->SetFFTSource(m_sweeper->m_ffthist);
 }
 
 MainWindow::~MainWindow()
@@ -147,13 +156,7 @@ void MainWindow::LoadSettings()
 {
     loadingsettings = true;
     QSettings settings(gSettingsFileName, QSettings::NativeFormat);
-    /*
-    bool parsed = false;
-    int t = settings.value("testsetting", 1).toInt(parsed);
-    if(parsed)
-        gtest=t;
 
-*/
     ui->spnFreqLow->setValue(settings.value("FreqSweepLow", 800).toDouble());
     ui->spnFreqHigh->setValue(settings.value("FreqSweepHigh", 900).toDouble());
     bool bval = settings.value("DetectPeaks",false).toBool();
@@ -165,8 +168,9 @@ void MainWindow::LoadSettings()
     ui->sldGain->setValue(settings.value("sldGain",ui->sldGain->value()).toInt());
     ui->slddblow->setValue(settings.value("slddblow",ui->slddblow->value()).toInt());
     ui->slddbHigh->setValue(settings.value("slddbHigh",ui->slddbHigh->value()).toInt());
-
-
+    ui->cmbWaterfallScheme->setCurrentIndex(settings.value("cmbWaterfallScheme",ui->cmbWaterfallScheme->currentIndex()).toInt());
+    m_markers->setFilename(settings.value("MarkerFilename",QApplication::applicationDirPath() + "/" + DEFAULT_MARKERS_FILENAME).toString());
+    m_markers->Load();
     int sldbin = settings.value("NumBins",ui->sldBins->value()).toInt();
     on_sldBins_valueChanged(sldbin);
 
@@ -189,8 +193,9 @@ void MainWindow::SaveSettings()
     settings.setValue("sldOverlap",ui->sldOverlap->value());
     settings.setValue("slddblow",ui->slddblow->value());
     settings.setValue("slddbHigh",ui->slddbHigh->value());
+    settings.setValue("cmbWaterfallScheme",ui->cmbWaterfallScheme->currentIndex());
+    settings.setValue("MarkerFilename",m_markers->m_filename);
 
-    //settings.setValue("testsetting",2)
 }
 
 void MainWindow::StartSweep(bool record)
@@ -305,11 +310,6 @@ void MainWindow::onActionRecord()
 {
     //start the sweep and start recording
     //StartSweep(true);
-    m_sweeper->m_ffthist->Reset(2000);
-    m_sweeper->m_ffthist->Reset(4000);
-    m_sweeper->m_ffthist->Reset(6000);
-    m_sweeper->m_ffthist->Reset(4000);
-    m_sweeper->m_ffthist->Reset(2000);
 }
 
 void MainWindow::onActionPlay()
@@ -322,15 +322,8 @@ void MainWindow::onActionStop()
     StopSweep();
 }
 
-void MainWindow::onMarkerSelected(ftmarker *mrk)
-{
 
-}
 
-void MainWindow::onMarkerHighlight(ftmarker *mrk)
-{
-
-}
 /*
 This is triggered when the markers table adds a new marker
 */
@@ -344,22 +337,8 @@ void MainWindow::onAddMarker()
     mrk->setHasEndTime(false);
     mrk->setHasStartTime(false);
     m_markers->AddMarker(mrk);
-    plotWaterfall->AddMarker(mrk);
-    m_markers->Save(gMarkersFileName.toLatin1().data());
 }
 
-void MainWindow::onRemoveMarker()
-{
-    m_markers->Save(gMarkersFileName.toLatin1().data());
-}
-
-//This is recieved from a signla from the markers table,
-//indicating all the markers have been removed
-void MainWindow::onRemoveAllMarkers()
-{
-    plotWaterfall->ClearMarkers();
-    m_markers->Save(gMarkersFileName.toLatin1().data());
-}
 
 void MainWindow::onRangeChanged(QCPRange range)
 {
@@ -374,6 +353,30 @@ void MainWindow::OnFreqHighlight(double freqMHz)
     QString txt;
     txt = QString::number(freqMHz,'f',3) + " MHz";
     ui->actionFrequency->setText(txt);
+}
+
+void MainWindow::onLoadMarkers()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,
+        "Open Markers File", QApplication::applicationDirPath(), "Marker Files (*.mrk)");
+    if(fileName.length() > 0)
+    {
+        m_markers->setFilename(fileName);
+        //load the markers file
+        m_markers->Clear();
+        m_markers->Load();
+    }
+}
+
+void MainWindow::onSaveMarkers()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+        "Save Markers File", QApplication::applicationDirPath(), "Marker Files (*.mrk)");
+    if(fileName.length() > 0)
+    {
+        m_markers->setFilename(fileName);        
+        m_markers->Save();//save the markers file
+    }
 }
 
 
@@ -531,5 +534,12 @@ void MainWindow::on_slddblow_valueChanged(int value)
     float upper = ui->slddbHigh->value();
     plotFFT->setRangeY(lower,upper);
     plotWaterfall->setRange_dBm(lower,upper);
+    SaveSettings();
+}
+
+
+void MainWindow::on_cmbWaterfallScheme_currentIndexChanged(int index)
+{
+    plotWaterfall->colorMap->setGradient((QCPColorGradient::GradientPreset)index);
     SaveSettings();
 }

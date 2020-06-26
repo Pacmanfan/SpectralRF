@@ -21,9 +21,10 @@ public:
     void UpdateTable();
     void UpdateButtons();
     void SelectMarkerOnTable(ftmarker *marker);
+    void addCheckBoxAt(int row_number, int column_number,bool state);
 private:
     Ui::wgt_marker_table *ui;
-    freq_markers *_markers;
+    freq_markers *_markers; // pointer reference to the marker table
     ftmarker *_selected;
     bool updategui;
 public slots:
@@ -31,25 +32,32 @@ public slots:
     void onMarkerAdded(ftmarker *mrk);
     void onMarkersAdded(QVector<ftmarker *> markers);
     void onMarkerRemoved(ftmarker *mrk);
+    void onMarkersCleared();
+    void onMarkerSelected(ftmarker *mrk);
+
+    void onCheckboxState(int state);
+
 signals:
-    void onMarkerSelected(ftmarker *mrk); // hard select - like a goto or double click
-    void onMarkerHighlight(ftmarker *mrk); // soft select - like a table item change
+
     void onAddMarker();
-    void onRemoveMarker();
-    void onExportMarker(ftmarker *mrk);
+    //void onRemoveMarker();
     void onMerge();
-    void onRemoveAllMarkers();
+
+
     void onStartDF(ftmarker *mrk);// start a direction find on this marker
+    void onLoadMarkers();
+    void onSaveMarkers();
 
 private slots:
     void on_tblMarkers_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
     void on_cmdRemove_clicked();
     void on_cmdAdd_clicked();
     void on_cmdGoto_clicked();
-    void on_cmdExport_clicked();
     void on_cmdRemoveAll_clicked();
     void on_cmdMerge_clicked();
     void on_cmdDirectionFind_clicked();
+    void on_cmdLoadMarkers_clicked();
+    void on_cmdSaveMarkers_clicked();
 };
 
 #endif // WGT_MARKER_TABLE_H

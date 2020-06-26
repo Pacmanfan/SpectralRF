@@ -37,12 +37,12 @@ void wgt_waterfall::Initialize()
     // set up the QCPColorMap:
     colorMap = new QCPColorMap(plot->xAxis, plot->yAxis);
 
-     colorMap->setInterpolate(false);
-     plot->setInteractions( QCP::iRangeZoom | QCP::iRangeDrag);
-     //allow us to select rectangles
-     plot->setInteraction(QCP::iSelectPlottables, true);
-     plot->axisRect()->setRangeZoomFactor(1.25,1);
-     plot->axisRect()->setRangeDrag(Qt::Horizontal);
+    colorMap->setInterpolate(false);
+    plot->setInteractions( QCP::iRangeZoom | QCP::iRangeDrag);
+    //allow us to select rectangles
+    plot->setInteraction(QCP::iSelectPlottables, true);
+    plot->axisRect()->setRangeZoomFactor(1.25,1);
+    plot->axisRect()->setRangeDrag(Qt::Horizontal);
 
     // mouse move
     connect(plot, SIGNAL(mouseMove(QMouseEvent*)), this,
@@ -85,50 +85,6 @@ void wgt_waterfall::setWaterfallDirection(bool value)
     WaterfallDirection = value;
 }
 
-void wgt_waterfall::AddMarker(ftmarker *ftm)
-{
-    ftmarker_GUI *ftmg = new ftmarker_GUI(ftm,plot);
-    m_markers_gui.append(ftmg);
-    m_markers.AddMarker(ftm);
-    m_selector->SetVisible(false);
-}
-
-void wgt_waterfall::RemoveMarker(ftmarker *ftm)
-{
-    m_selector->SetVisible(false);
-    int idx = -1;
-    ftmarker_GUI *ftmg = 0;
-    for(int c =0; c< m_markers_gui.size(); c++)
-    {
-        ftmg = m_markers_gui[c];
-        if (ftmg->m_marker == ftm)
-        {
-            idx = c;
-            break;
-        }
-    }
-    if(idx != -1)
-    {
-        ftmg->SetVisible(false);
-        m_markers_gui.removeAt(idx);
-        delete ftmg;
-    }
-    m_markers.RemoveMarker(ftm);
-}
-
-void wgt_waterfall::ClearMarkers()
-{
-    for(int c =0; c< m_markers_gui.size(); c++)
-    {
-        ftmarker_GUI *ftmg = m_markers_gui[c];
-        ftmg->SetVisible(false);
-        delete ftmg;
-    }
-    m_markers_gui.clear();
-    m_markers.Clear();
-    m_selector->SetVisible(false);
-}
-
 void wgt_waterfall::SetControlsVisible(bool val)
 {
     ui->wgtControls->setVisible(val);;
@@ -152,7 +108,7 @@ void wgt_waterfall::setXRange(double low, double high)
 
 void wgt_waterfall::Update(FFT_Hist *pFFTHelp, double tlow, double thigh)
 {
-    static bool bFirstTimeThrough = true;
+
 
     //SET UP SOME MIN/MAX's we can use for GUI WINDOW.
     double minFreq=0;
@@ -166,6 +122,8 @@ void wgt_waterfall::Update(FFT_Hist *pFFTHelp, double tlow, double thigh)
     int ny = pFFTHelp->MaxRows();// find out how many row entries
     if(nx ==0 || ny ==0)
         return;
+
+    pFFTHelp->Lock();
 
     colorMap->data()->setSize(nx, ny);//mSWTFFileListDepth); // we want the color map to have nx * ny data points
 
@@ -200,7 +158,7 @@ void wgt_waterfall::Update(FFT_Hist *pFFTHelp, double tlow, double thigh)
 
     colorMap->data()->SetDataBounds(lower,upper);
     colorMap->setDataRange(QCPRange(lower,upper));
-
+    pFFTHelp->Unlock();
 }
 
 void wgt_waterfall::AddTuner(ftmarker *tunermarker)
@@ -262,7 +220,7 @@ void wgt_waterfall::OnMouseRelease(QMouseEvent *evt)
         //determine a list of markers that intersect with the waterfall selection marker
         // raise an event to notify the rest of the app
 
-        QVector<ftmarker *> mrks = m_markers.Intersects(m_rectselect);
+        QVector<ftmarker *> mrks = m_markers->Intersects(m_rectselect);
         if(mrks.size() > 0)
         {
             m_selector->SetVisible(false); // since we actually made a selection, make it invisible
@@ -270,7 +228,7 @@ void wgt_waterfall::OnMouseRelease(QMouseEvent *evt)
         //send even empty sets
         UnselectMarkers();
         SetMarkersSelected(mrks);
-        emit(OnMarkersSelected(mrks));
+       // emit(OnMarkersSelected(mrks));
 
     }
 
@@ -470,7 +428,7 @@ bool wgt_waterfall::eventFilter(QObject *obj, QEvent *event)
         }
         if(keyEvent->key() == Qt::Key_Delete)
         {
-            emit(OnDeleteCurrentMarker());
+           // emit(OnDeleteCurrentMarker());
         }
 
     }else if (event->type() == QEvent::KeyRelease)
@@ -485,6 +443,18 @@ bool wgt_waterfall::eventFilter(QObject *obj, QEvent *event)
     return QObject::eventFilter(obj, event);
 }
 
+void wgt_waterfall::setMarkers(freq_markers *markers)
+{
+    m_markers = markers;
+    //now, update the gui to reflect all the markers
+    connect(m_markers,SIGNAL(MarkerAdded(ftmarker*)),this,SLOT(onMarkerAdded(ftmarker*)));
+    connect(m_markers,SIGNAL(MarkerChanged(ftmarker*)),this,SLOT(onMarkerChanged(ftmarker*)));
+    connect(m_markers,SIGNAL(MarkerRemoved(ftmarker*)),this,SLOT(onMarkerRemoved(ftmarker*)));
+    connect(m_markers,SIGNAL(MarkersAdded(QVector<ftmarker*>)),this,SLOT(onMarkersAdded(QVector<ftmarker*>)));
+    connect(m_markers,SIGNAL(MarkersCleared()),this,SLOT(onMarkersCleared()));
+    connect(m_markers,SIGNAL(MarkerSelected(ftmarker*)),this,SLOT(onMarkerSelected(ftmarker*)));
+}
+
 void wgt_waterfall::onitemDoubleClick(QCPAbstractItem *item ,QMouseEvent *ev)
 {
     Q_UNUSED(ev)
@@ -496,7 +466,7 @@ void wgt_waterfall::onitemDoubleClick(QCPAbstractItem *item ,QMouseEvent *ev)
         ftmarker_GUI *mrk = m_markers_gui.at(c);
         if((void *)item == (void *)mrk->m_rect)
         {
-            emit(OnMarkerSelected(mrk->m_marker,false));
+            m_markers->Select(mrk->m_marker);
             mrk->SetSelected(true); // set it selected on screen
             break;
         }
@@ -518,8 +488,80 @@ void wgt_waterfall::onitemClick(QCPAbstractItem *item ,QMouseEvent *ev)
         ftmarker_GUI *mrk = m_markers_gui.at(c);
         if((void *)item == (void *)mrk->m_rect)
         {
-            emit(OnMarkerSelected(mrk->m_marker,true));
+            //emit(OnMarkerSelected(mrk->m_marker,true));
+            m_markers->Select(mrk->m_marker);
             mrk->SetSelected(true); // set it selected on screen
+            break;
+        }
+    }
+}
+
+void wgt_waterfall::onMarkerChanged(ftmarker *mrk)
+{
+ // the ftmarker_GUI itself listens for a change in the marker
+}
+
+void wgt_waterfall::onMarkerAdded(ftmarker *mrk)
+{
+    ftmarker_GUI *ftmg = new ftmarker_GUI(mrk,plot);
+    ftmg->SetVisible(true);
+    m_markers_gui.append(ftmg);
+}
+
+//done usually through a load
+void wgt_waterfall::onMarkersAdded(QVector<ftmarker *> markers)
+{
+    for(int c = 0; c < markers.size(); c ++)
+    {
+        ftmarker_GUI *ftmg = new ftmarker_GUI(markers[c],plot);
+        ftmg->SetVisible(true);
+        m_markers_gui.append(ftmg);
+    }
+}
+
+void wgt_waterfall::onMarkerRemoved(ftmarker *ftm)
+{
+    m_selector->SetVisible(false);
+    int idx = -1;
+    ftmarker_GUI *ftmg = 0;
+    for(int c =0; c< m_markers_gui.size(); c++)
+    {
+        ftmg = m_markers_gui[c];
+        if (ftmg->m_marker == ftm)
+        {
+            idx = c;
+            break;
+        }
+    }
+    if(idx != -1)
+    {
+        ftmg->SetVisible(false);
+        m_markers_gui.removeAt(idx);
+        delete ftmg;
+    }
+}
+
+void wgt_waterfall::onMarkersCleared()
+{
+    for(int c =0; c< m_markers_gui.size(); c++)
+    {
+        ftmarker_GUI *ftmg = m_markers_gui[c];
+        ftmg->SetVisible(false);
+        delete ftmg;
+    }
+    m_markers_gui.clear();
+    m_selector->SetVisible(false);
+}
+
+void wgt_waterfall::onMarkerSelected(ftmarker *mark)
+{    
+    UnselectMarkers();
+    for(int c= 0; c< m_markers_gui.size(); c++)
+    {
+        ftmarker_GUI *mrk = m_markers_gui.at(c);
+        if(mark == mrk->m_marker)
+        {
+            mrk->SetSelected(true);
             break;
         }
     }

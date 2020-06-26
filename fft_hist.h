@@ -41,6 +41,7 @@ public:
     void ClearMinMaxValues();
     float GetFreqHz(int binidx); // in hz
     float GetLowFreqHz();
+    float GetCenterFreqHz(){return m_CFHz;}
     float GetHighFreqHz();
 
     float GetMinDBM(bool unbounded = false); // for graphing, changes when new data is added, reset when freq or span changes

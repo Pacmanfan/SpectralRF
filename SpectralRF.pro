@@ -44,7 +44,8 @@ SOURCES += \
     sdr_device.cpp \
     sdr_device_manager.cpp \
     sigtuner_gui.cpp \
-    sweepfile.cpp
+    sweepfile.cpp \
+    signaldetector.cpp
 
 
 HEADERS += \
@@ -66,7 +67,8 @@ HEADERS += \
     sdr_device_manager.h \
     sigtuner_gui.h \
     sinetable.h \
-    sweepfile.h
+    sweepfile.h \
+    signaldetector.h
 
 
 FORMS += \

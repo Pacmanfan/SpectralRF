@@ -37,6 +37,7 @@ public:
     QCustomPlot *m_ParentPlot;
     ftmarker *m_tunermarker;
     void SetupLine(QCPItemStraightLine* line, float xv, QColor color);
+    void SetVisible(bool visible);
 private slots:
     void OnMarkerChanged(ftmarker *mrk);
 };

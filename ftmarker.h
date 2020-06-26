@@ -78,6 +78,10 @@ public:
     void SurpressSignal();
     void RestoreSignal(bool signalnow);
 
+    bool visible() const;
+
+    void setVisible(bool visible);
+
 private:
     double m_FreqLowHz;
     double m_FreqHighHz;
@@ -88,6 +92,7 @@ private:
     bool m_HasStartTime; // does this have a start time?
     bool m_HasEndTime;  // does this have an end time?
     bool m_surpress;
+    bool m_visible{true};
     void Signal();
 
 signals:
@@ -105,9 +110,10 @@ class freq_markers:  public QObject
     Q_OBJECT
 public:
     QVector<ftmarker *> m_markers;
+    QString m_filename; // the filename that this marker set uses to load / save
     explicit freq_markers(QObject *parent = 0);
-    bool Load(char *fname);
-    bool Save(char *fname);
+    bool Load();
+    bool Save();
 
     void Load(QSettings *settings);
     void Save(QSettings *settings);
@@ -116,7 +122,11 @@ public:
     void AddMarkers(QVector<ftmarker *> markers); //add a group of markers
     void RemoveMarker(ftmarker * mrk);
     void Clear(); // remove all markers
+    void Select(ftmarker *mrk); // select this marker
     QVector<ftmarker *> Intersects(ftmarker * mrk); // selector
+    QString filename() const;
+    void setFilename(const QString &filename);
+
 private slots:
     void OnMarkerChanged(ftmarker *mrk);
 signals:
@@ -124,6 +134,8 @@ signals:
     void MarkerAdded(ftmarker *mrk);
     void MarkersAdded(QVector<ftmarker *> markers); // signal that a group of markers were added
     void MarkerRemoved(ftmarker *mrk);
+    void MarkersCleared(); // all markers removed
+    void MarkerSelected(ftmarker *mrk);
 };
 
 #endif // FREQ_TIME_MARKER_H

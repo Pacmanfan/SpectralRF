@@ -2,6 +2,8 @@
 #include "ui_wgt_marker_table.h"
 #include <QScrollBar>
 #include <QMessageBox>
+#include <QCheckBox>
+bool checkchanging = false;
 
 wgt_marker_table::wgt_marker_table(QWidget *parent) :
     QWidget(parent),
@@ -23,9 +25,10 @@ void wgt_marker_table::SetMarkers(freq_markers *markers)
     _markers = markers;
     connect(_markers,SIGNAL(MarkerAdded(ftmarker*)),this,SLOT(onMarkerAdded(ftmarker*)));
     connect(_markers,SIGNAL(MarkersAdded(QVector<ftmarker *>)),this,SLOT(onMarkersAdded(QVector<ftmarker *>)));
-
     connect(_markers,SIGNAL(MarkerChanged(ftmarker*)),this,SLOT(onMarkerChanged(ftmarker*)));
     connect(_markers,SIGNAL(MarkerRemoved(ftmarker*)),this,SLOT(onMarkerRemoved(ftmarker*)));
+    connect(_markers,SIGNAL(MarkersCleared()),this,SLOT(onMarkersCleared()));
+    connect(_markers,SIGNAL(MarkerSelected(ftmarker*)),this,SLOT(onMarkerSelected(ftmarker*)));
     UpdateTable();
 }
 
@@ -59,8 +62,41 @@ void wgt_marker_table::SelectMarkerOnTable(ftmarker *marker)
     }
 }
 
+void wgt_marker_table::addCheckBoxAt(int row_number, int column_number,bool state)
+{
+
+    // Create a widget that will contain a checkbox
+ //    QWidget *checkBoxWidget = new QWidget();
+     QCheckBox *checkBox = new QCheckBox();      // We declare and initialize the checkbox
+   //  QHBoxLayout *layoutCheckBox = new QHBoxLayout(checkBoxWidget); // create a layer with reference to the widget
+   //  layoutCheckBox->addWidget(checkBox);            // Set the checkbox in the layer
+   //  layoutCheckBox->setAlignment(Qt::AlignCenter);  // Center the checkbox
+   //  layoutCheckBox->setContentsMargins(0,0,0,0);    // Set the zero padding
+     /* Check on the status of odd if an odd device,
+       * exhibiting state of the checkbox in the Checked, Unchecked otherwise
+       * */
+      checkBox->setChecked(state);
+
+      //ui->tblMarkers->setCellWidget(row_number,column_number, checkBoxWidget);
+      ui->tblMarkers->setCellWidget(row_number,column_number, checkBox);
+
+    connect(checkBox,SIGNAL(stateChanged(int)),this,SLOT(onCheckboxState(int)));
+     // Another way to add check box as item
+    /*
+
+   // QTableWidgetItem *checkBoxItem = new QTableWidgetItem("checkbox string ");
+    QTableWidgetItem *checkBoxItem = new QTableWidgetItem();
+    checkBoxItem->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+    checkBoxItem->setCheckState(Qt::Checked);
+    ui->job_table_view->setItem(row_number,column_number,checkBoxItem);
+
+    */
+}
+
 void wgt_marker_table::UpdateTable()
 {
+    if(checkchanging)
+        return;
    ui->tblMarkers->clear(); // clear all previous
    QStringList labels;
 
@@ -68,7 +104,7 @@ void wgt_marker_table::UpdateTable()
    ui->tblMarkers->setColumnCount(4); // 5
    //set number of rows
    ui->tblMarkers->setRowCount(_markers->m_markers.size());
-    labels << tr("Name") << tr("Freq") << tr("BW") << tr("Tags");//  << tr("Demod")  ;
+    labels << tr("Visible")<< tr("Name") << tr("Freq") << tr("BW") << tr("Tags");//  << tr("Demod")  ;
    ui->tblMarkers->setHorizontalHeaderLabels(labels);
 
    int cnt = 0;
@@ -77,6 +113,7 @@ void wgt_marker_table::UpdateTable()
    {
        idx = 0;
        ftmarker * fm = _markers->m_markers.at(cnt);
+        addCheckBoxAt(cnt,idx++,fm->visible());
 
        QTableWidgetItem* nameitem = new QTableWidgetItem();
        nameitem->setText(fm->Name());
@@ -106,13 +143,9 @@ void wgt_marker_table::UpdateButtons()
 {
     if(_selected)
     {
-        ui->cmdExport->setEnabled(true);
-        ui->cmdGoto->setEnabled(true);
         ui->cmdRemove->setEnabled(true);
     }else
     {
-        ui->cmdExport->setEnabled(false);
-        ui->cmdGoto->setEnabled(false);
         ui->cmdRemove->setEnabled(false);
     }
 }
@@ -121,6 +154,7 @@ void wgt_marker_table::onMarkerChanged(ftmarker *mrk)
 {
     Q_UNUSED(mrk)
     UpdateTable();
+    ui->wgt_marker_edit->SetMarker(mrk);
 }
 
 void wgt_marker_table::onMarkerAdded(ftmarker *mrk)
@@ -134,13 +168,50 @@ void wgt_marker_table::onMarkersAdded(QVector<ftmarker *> markers)
 {
     //Q_UNUSED(mrk)
     UpdateTable();
-    //SetSelected(mrk);
 }
 
 void wgt_marker_table::onMarkerRemoved(ftmarker *mrk)
 {
     Q_UNUSED(mrk)
     UpdateTable();
+}
+
+void wgt_marker_table::onMarkersCleared()
+{
+    // clear the table view
+    UpdateTable();
+    ui->wgt_marker_edit->SetMarker(nullptr);
+    _selected = nullptr; // set the selected as nothing
+}
+
+/*
+Signal received that a marker was selected, ignore it if we're the one who just did it
+*/
+void wgt_marker_table::onMarkerSelected(ftmarker *mrk)
+{
+    if(updategui)
+        return;
+    //select the item on the table
+    SelectMarkerOnTable(mrk);
+    ui->wgt_marker_edit->SetMarker(mrk);
+    _selected = mrk; // set the selected
+}
+
+void wgt_marker_table::onCheckboxState(int state)
+{
+    // one or more of the visiblity checkboxes in the table has changed state
+    // iterate throug hthe table, using the index and apply the new visibilty flag
+    // to each marker
+  //  int a= 100;
+  //  a = 10; // test
+    checkchanging = true;
+    for(int c = 0 ; c <ui->tblMarkers->rowCount(); c++)
+    {
+        QCheckBox * cb = (QCheckBox *)ui->tblMarkers->cellWidget(c,0);
+        ftmarker * fm = _markers->m_markers.at(c);
+        fm->setVisible(cb->isChecked());
+    }
+    checkchanging = false;
 }
 
 void wgt_marker_table::on_tblMarkers_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous)
@@ -161,7 +232,7 @@ void wgt_marker_table::on_tblMarkers_currentItemChanged(QTableWidgetItem *curren
     //show that info in the marker editor
     ui->wgt_marker_edit->SetMarker(mrk);
     _selected = mrk; // set the selected
-    emit(onMarkerHighlight(mrk));
+    _markers->Select(mrk);
     UpdateButtons();
 }
 
@@ -175,13 +246,13 @@ void wgt_marker_table::on_cmdRemove_clicked()
         ui->wgt_marker_edit->SetMarker(0);
         UpdateButtons();
         UpdateTable();
-        emit(onRemoveMarker());
     }
 }
 
 void wgt_marker_table::on_cmdAdd_clicked()
 {
-    emit(onAddMarker());
+    emit(onAddMarker()); // request for the main window to add the marker
+    // alternatively, the fft window could do it because it has the ftmarker_GUI object
 }
 
 void wgt_marker_table::on_cmdGoto_clicked()
@@ -192,13 +263,6 @@ void wgt_marker_table::on_cmdGoto_clicked()
     }
 }
 
-void wgt_marker_table::on_cmdExport_clicked()
-{
-    if(_selected)
-    {
-        emit(onExportMarker(_selected));
-    }
-}
 
 void wgt_marker_table::on_cmdRemoveAll_clicked()
 {
@@ -207,7 +271,8 @@ void wgt_marker_table::on_cmdRemoveAll_clicked()
                             QMessageBox::Yes|QMessageBox::No);
     if (reply == QMessageBox::Yes)
     {
-        emit(onRemoveAllMarkers());
+        //emit(onRemoveAllMarkers());
+        _markers->Clear();
         UpdateTable();
     }
 }
@@ -231,5 +296,14 @@ void wgt_marker_table::on_cmdDirectionFind_clicked()
     ftmarker *mrk = _markers->m_markers.at(row);
     //raise a signal to tell the main form we're starting a direction find
     emit(onStartDF(mrk));
+}
 
+void wgt_marker_table::on_cmdLoadMarkers_clicked()
+{
+    emit(onLoadMarkers()); // done in the main window
+}
+
+void wgt_marker_table::on_cmdSaveMarkers_clicked()
+{
+    emit(onSaveMarkers()); // done in the main window
 }

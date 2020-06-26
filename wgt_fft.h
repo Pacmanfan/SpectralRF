@@ -33,7 +33,6 @@ public:
     bool autorange; // automatically scale to fit the data on screen in the Y axis
     double rangelowY,rangehighY; // when NOT autoranging, use the set values
 
-
     QCPItemTracer *_FFTTracer; // the tracer on the FFT graph
     void UpdateCursorDotPosition(double xCenterIn);
     void SetXRange(float lower,float upper);
@@ -45,17 +44,31 @@ public:
     void setRangeY(double low, double high);
 
     void AddTuner(ftmarker *tunermarker);
+    void AddMainTuner(ftmarker *maintuner);
     void RemoveTuner(ftmarker *ftm);
+
+    void setMarkers(freq_markers *markers);
 
 private:
     Ui::wgt_FFT *ui;
     QVector<sigtuner_GUI *> m_tuners_gui;
+    freq_markers *m_markers;
+    ftmarker *m_maintuner{0};
     double lowfreq,highfreq;
 public slots:
     void OnMouseDoubleClickFFT(QMouseEvent *evt);
     void OnMousePressedFFT(QMouseEvent *evt);
     void OnMouseMoveFFT(QMouseEvent *evt);
     void OnMouseReleaseFFT(QMouseEvent *evt);
+
+
+    void onMarkerChanged(ftmarker *mrk);
+    void onMarkerAdded(ftmarker *mrk);
+    void onMarkersAdded(QVector<ftmarker *> markers); // signal that a group of markers were added
+    void onMarkerRemoved(ftmarker *mrk);
+    void onMarkersCleared(); // all markers removed
+    void onMarkerSelected(ftmarker *mrk);
+
 signals:
     void OnFreqHighlight(double freq);
 };

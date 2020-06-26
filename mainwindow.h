@@ -8,6 +8,8 @@
 #include <wgt_waterfall.h>
 #include <sdr_device_manager.h>
 #include <ftmarker.h>
+#include <signaldetector.h>
+
 #define APP_VERSION "1.0.0.0"
 #define APP_NAME "Spectral RF"
 #define SETTINGS_FILE "SpectralRF.ini"
@@ -32,6 +34,7 @@ public:
     wgt_marker_table *markerstable;
     freq_markers *m_markers;
     ftmarker m_mrk_main;
+    SignalDetector *m_signaldetector;
 private:
     Ui::MainWindow *ui;
     void SetupGUIforRadio();
@@ -49,14 +52,11 @@ public slots:
     void onActionPlay();
     void onActionStop();
 
-    void onMarkerSelected(ftmarker *mrk); // hard select - like a goto or double click
-    void onMarkerHighlight(ftmarker *mrk); // soft select - like a table item change
-    void onAddMarker();
-    void onRemoveMarker();
-    void onRemoveAllMarkers();
+    void onAddMarker();// signal recevied from markers table to add new marker from the fft gui selector
     void onRangeChanged(QCPRange range);
     void OnFreqHighlight(double freq);
-
+    void onLoadMarkers(); // signal recevied from markers table to load new markers file
+    void onSaveMarkers(); // signal recevied from markers table to save markers file
 
 private slots:
    // void on_cmdStartStop_clicked();
@@ -79,6 +79,8 @@ private slots:
     void on_sldOverlap_valueChanged(int value);
     void on_slddbHigh_sliderMoved(int position);
     void on_slddblow_valueChanged(int value);
+    void on_cmbWaterfallScheme_currentIndexChanged(int index);
+
 };
 
 #endif // MAINWINDOW_H
