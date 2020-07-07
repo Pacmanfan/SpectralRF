@@ -55,8 +55,8 @@ public:
     ~SignalDetector();
     void SetFFTSource(FFT_Hist * fft){pfft = fft;}
     FFT_Hist * GetFFTSource(){return pfft;}
-    void SetPeakDetector(peak_detector * peakdetector){m_peakdetector = peakdetector;}
-    void Update();
+  //  void SetPeakDetector(peak_detector * peakdetector){m_peakdetector = peakdetector;}
+    void Update(float peaksensistivity);
     void UpdateMinMax(); // monitor and determine high / low thresholds
     void DetectChange();
     void Clear(){m_entries.clear();}
@@ -74,7 +74,7 @@ private:
     int m_maplen;
     int m_binsize;
     FFT_Hist * pfft;//
-    peak_detector * m_peakdetector;
+   // peak_detector * m_peakdetector;
     boost::mutex m_mutex;
     float m_curCF, m_curBW; //for detecting changes in the cf or bw
 

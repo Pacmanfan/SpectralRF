@@ -107,7 +107,7 @@ The first level takes a look at the instantaneous results in the peak detect, an
 signals (PotentialSignalList)
 */
 
-void SignalDetector::Update()
+void SignalDetector::Update(float peaksensistivity)
 {
     DetectChange();
     pfft->Lock();
@@ -120,7 +120,8 @@ void SignalDetector::Update()
     pfft->CalcNoiseFloor(0);
     float *localnoisefloor = pfft->GetNoiseFloor();
     // iterate through all the detected peaks
-    for(QMap<int,float>::iterator it = m_peakdetector->m_Peaks.begin(); it != m_peakdetector->m_Peaks.end(); ++it)
+    QMap<int,float> peaks = pfft->DetectPeaks(peaksensistivity);
+    for(QMap<int,float>::iterator it = peaks.begin(); it != peaks.end(); ++it)
     {
         cntridx = it.key(); // the the center bin index
         cntrfreqHz = pfft->GetFreqHz(cntridx); // get the frequency at that bin

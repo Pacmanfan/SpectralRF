@@ -266,11 +266,13 @@ void MainWindow::onViewTimer()
     if(m_sweeper->IsSweeping() == false)
         return;
 
-    QMap<int,float> peaks;
+    //QMap<int,float> peaks;
     if(detectingpeaks)
     {
+
         float v = ui->sldDetectSensitivity->value();
         v /= 100.0;
+        /*
        // v=3.25;
         peaks = m_sweeper->m_ffthist->DetectPeaks(v);
         if(peaks.count() > 0)
@@ -278,6 +280,8 @@ void MainWindow::onViewTimer()
             //printf("%d peaks\r\n",peaks.count());
         }
         //now, display the peaks on the fft graph
+        */
+        m_signaldetector->Update(v);
     }
     //update the waterfall / fft views
 
