@@ -1,4 +1,5 @@
 #include "sdr_device.h"
+#include <iostream>
 
 SDR_Device::SDR_Device()
 {
@@ -42,11 +43,14 @@ bool SDR_Device::InitSDR(SoapySDR::Kwargs &args)
             if(rates[i].maximum() > m_rate_limit_high) m_rate_limit_high = rates[i].maximum();
         }
     }
+    m_BW_Hz = 2048000;//m_rate_limit_high /2;
 
-    sdr->setSampleRate( SOAPY_SDR_RX, 0, m_rate_limit_high);// set to max bw
-    m_BW_Hz = m_rate_limit_high;
+    sdr->setSampleRate( SOAPY_SDR_RX, 0, m_BW_Hz);// set to max bw
+   // m_BW_Hz = m_rate_limit_high;
 
+    double freq = sdr->getFrequency( SOAPY_SDR_RX, 0);
     sdr->setFrequency( SOAPY_SDR_RX, 0, 433e6);
+
     // 4. setup a stream (complex floats)
     rx_stream = sdr->setupStream( SOAPY_SDR_RX, SOAPY_SDR_CF32);
     if( rx_stream == nullptr)
@@ -55,6 +59,11 @@ bool SDR_Device::InitSDR(SoapySDR::Kwargs &args)
         sdr = nullptr;
         return false;
     }
+    int res = sdr->activateStream( rx_stream, 0, 0, 0);
+    if(res!=0){
+        std::cout << "error activating stream \r\n";
+    }
+
     return true;
 }
 

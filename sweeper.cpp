@@ -71,7 +71,11 @@ void Sweeper::Sweep()
     //m_ffthist->Reset(totalsweepbins);
 
 
-    m_radio->sdr->activateStream( m_radio->rx_stream, 0, 0, 0);
+    int res = m_radio->sdr->activateStream( m_radio->rx_stream, 0, 0, 0);
+    if(res!=0){
+        std::cout << "error activating stream \r\n";
+    }
+
     int ret = 0;
     int idx = 0;
     int adj_numbin = m_nBinsPerFFT * overlap ; // adjusted number of bins
@@ -84,9 +88,11 @@ void Sweeper::Sweep()
     {
         //calculate the current low freq
         fcurlow = fcurrent - (half_bw * overlap);
+
         if(fold != fcurrent) // check to see if frequency is changing
         {
-            m_radio->sdr->setFrequency(SOAPY_SDR_RX, 0,fcurrent);//move to the new center frequency            
+            double currentfreq = m_radio->sdr->getFrequency(SOAPY_SDR_RX,0);
+            m_radio->sdr->setFrequency(SOAPY_SDR_RX, 0,fcurrent);//move to the new center frequency
             EatSamples(); //wait a certain 'settle time' and continue eating samples
         }
 

@@ -51,7 +51,7 @@ The update rate of this can be set using the SetUpdateRateHz function
 class SignalDetector
 {
 public:
-    SignalDetector(int binsize);
+    SignalDetector(int binsize = 1024);
     ~SignalDetector();
     void SetFFTSource(FFT_Hist * fft){pfft = fft;}
     FFT_Hist * GetFFTSource(){return pfft;}

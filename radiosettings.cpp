@@ -66,19 +66,19 @@ void RadioSettings::on_lstradios_currentRowChanged(int currentRow)
     //	2.1 antennas
 
     txt += "Rx antennas: \r\n";
-    for(int i = 0; i < dev->lst_ant.size(); ++i)
+    for(unsigned int i = 0; i < dev->lst_ant.size(); ++i)
         txt += QString(dev->lst_ant[i].c_str()) + "\r\n";
 
 
     //	2.2 gains
 
     txt += "Rx Gains: \r\n";
-    for(int i = 0; i < dev->lst_gain.size(); ++i)
+    for(unsigned int i = 0; i < dev->lst_gain.size(); ++i)
         txt += QString(dev->lst_gain[i].c_str()) + "\r\n";
 
     //	2.3. ranges(frequency ranges)
     txt += "Rx freq ranges: \r\n";
-    for(int i = 0; i < dev->ranges.size(); ++i)
+    for(unsigned int i = 0; i < dev->ranges.size(); ++i)
     {
         txt += QString::number(dev->ranges[i].minimum(),'f',2) + " -> " + QString::number(dev->ranges[i].maximum(),'f',2);
         txt += "\r\n";

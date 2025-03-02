@@ -109,7 +109,7 @@ void wgt_waterfall::setXRange(double low, double high)
 void wgt_waterfall::Update(FFT_Hist *pFFTHelp, double tlow, double thigh)
 {
 
-
+    return;// stub out for now..
     //SET UP SOME MIN/MAX's we can use for GUI WINDOW.
     double minFreq=0;
     double maxFreq=0;
