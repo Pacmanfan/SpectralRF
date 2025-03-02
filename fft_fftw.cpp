@@ -1,6 +1,6 @@
 #include "fft_fftw.h"
 #include <cstring>
-#include <stdint.h>
+#include <cstdint>
 fft_fftw::fft_fftw()
 {
     fftsize = 0;

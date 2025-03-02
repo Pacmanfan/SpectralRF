@@ -84,3 +84,9 @@ SpectralRF.pro.user.8cc587e
 SoapySDR
 
 .qtc_clangd/
+
+*.idx
+
+SpectralRF.pro.user.613a9eb
+
+.qtc_clangd/compile_commands.json
