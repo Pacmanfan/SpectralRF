@@ -4,10 +4,10 @@
 #include <SoapySDR/Types.hpp>
 #include <SoapySDR/Formats.hpp>
 
-#include <string>	// std::string
+//#include <string>	// std::string
 #include <vector>	// std::vector<...>
-#include <map>		// std::map< ... , ... >
-#include <iostream>
+//#include <map>		// std::map< ... , ... >
+//#include <iostream>
 #include <radiosettings.h>
 #include <QMessageBox>
 #include <QSettings>

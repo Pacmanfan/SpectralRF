@@ -1,6 +1,6 @@
 #include "wgt_marker_editor.h"
 #include "ui_wgt_marker_editor.h"
-#include <algorithm>
+
 using namespace std;
 
 wgt_marker_editor::wgt_marker_editor(QWidget *parent) :

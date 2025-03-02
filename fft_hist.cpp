@@ -1,10 +1,10 @@
 #include "fft_hist.h"
 #include "string.h"
-#include "memory.h"
+//#include "memory.h"
 #include <time.h>
 #include <stdio.h>
-#include <iostream> // library that contain basic input/output functions
-#include <fstream>  // library that contains file input/output functions
+//#include <iostream> // library that contain basic input/output functions
+//#include <fstream>  // library that contains file input/output functions
 
 using namespace std;
 

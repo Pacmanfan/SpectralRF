@@ -74,3 +74,9 @@ SpectralRF
 Makefile
 
 SpectralRF.pro.user
+
+*.idx
+
+SpectralRF.pro.user.613a9eb
+
+.qtc_clangd/compile_commands.json
